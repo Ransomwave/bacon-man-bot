@@ -1,0 +1,207 @@
+import nextcord as discord
+from discord.ext import commands, tasks
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime, timedelta  # Import the datetime module
+import asyncio
+import re
+
+
+#discord
+client = commands.Bot(command_prefix = '!', intents = discord.Intents.all())
+
+##
+url = "https://www.roblox.com/games/8197423034/get-a-drink-at-3-am-beta"
+response = requests.get(url)
+soup = BeautifulSoup(response.text, 'html.parser')
+##
+
+@client.event
+async def on_ready():
+    activity = discord.Activity(type=discord.ActivityType.playing, name="get a drink at 3 am!")
+    await client.change_presence(status=discord.Status.online, activity=activity)
+    print('=============== RUNNING ===============')
+
+@client.slash_command(name="ping", description="Get the bot's latency.")
+async def ping(ctx):
+    latency = client.latency * 1000
+    embed = discord.Embed(colour=discord.Colour.red())
+    embed.add_field(name="Client Latency", value=f"Ping value: **{latency}ms**")
+    await ctx.send(embed=embed)
+
+# @client.slash_command(name="currentplr", description="Get gada3's current playercount")
+# async def currentplr(ctx):
+#     response = requests.get(url)
+#     soup = BeautifulSoup(response.text, 'html.parser')
+
+#     active_players = soup.select_one('li.game-stat.game-stat-width p.text-lead.font-caption-body')
+
+#     await ctx.send(f"current player count: {active_players.text}")
+
+@client.command(name="stats", description="Get a game's stats")
+async def stats(ctx, id: int = 8197423034):
+    url = f"https://www.roblox.com/games/{id}"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    game_name = soup.find('h1', class_='game-name').text.strip()
+    print("Game Name:", game_name)
+
+    stats = {}
+    for stat in soup.find_all('li', class_='game-stat'):
+        label = stat.find('p', class_='text-label').text.strip()
+        value = stat.find('p', class_='text-lead').text.strip()
+        stats[label] = value
+        print(label, ":", value)
+
+    if 'Active' not in stats or 'Visits' not in stats or 'Favorites' not in stats:
+        debug_message = "No game found with the provided ID.\n"
+        debug_message += f"Stats: {stats}"
+        print(debug_message)
+        await ctx.send(debug_message)
+        return
+
+    embed = discord.Embed(title="Game Stats:", description=game_name, color=0xff4747)
+    embed.add_field(name="Current Player Count:", value=stats['Active'], inline=True)
+    embed.add_field(name="Visit Count:", value=stats['Visits'], inline=True)
+    embed.add_field(name="Favorite Count:", value=stats['Favorites'], inline=False)
+    await ctx.send(embed=embed)
+
+@client.slash_command(description="Show available commands and their usage")
+async def help(ctx):
+    embed = discord.Embed(title="Command List", color=0xff4747)
+    
+    # Ping Command
+    ping_description = "Get the bot's latency."
+    ping_usage = "/ping"
+    embed.add_field(name="Ping", value=f"Description: {ping_description}\nUsage: `{ping_usage}`", inline=False)
+    
+    # # Current Player Count Command
+    # currentplr_description = "Get gada3's current player count."
+    # currentplr_usage = "/currentplr"
+    # embed.add_field(name="Current Player Count", value=f"Description: {currentplr_description}\nUsage: `{currentplr_usage}`", inline=False)
+    
+    # Stats Command
+    stats_description = "Get a game's stats."
+    stats_usage = "/stats [id (leave blank for gada3 stats)]"
+    embed.add_field(name="Stats", value=f"Description: {stats_description}\nUsage: `{stats_usage}`", inline=False)
+    
+    await ctx.send(embed=embed)
+
+
+# Define the global image limit and cooldown duration
+IMAGE_LIMIT = 15
+COOLDOWN_DURATION = 60  # 60 seconds
+# Dictionary to track image uploads per server
+image_uploads = {}
+# Whitelisted user IDs (add any user IDs you want to whitelist)
+whitelisted_users = [777460173115097098]
+@client.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    # Check if the message is in #suggestions
+    if message.channel.id == 995400838849769505 or message.channel.id == 1237050991711359047:
+        # If it is, add voting reactions to the message
+        try:
+            # print("Vote reactions sent in proper channels.")
+            await message.add_reaction('<:Yes:1097495643204882442>')
+            await message.add_reaction('<:No:1097495733780873358>')
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    else:
+        # Check if the message is in any of the whitelisted channels by their IDs
+        # The channels are: media, suggestions, bug-report, fan-art, other-art, arg-discussion
+        whitelisted_channels = [995400838849769509, 995400838849769505, 995422771628757022, 1059899526992904212, 1076248681386352760, 1074713502205358121, 1143688301841231882]
+        if message.channel.id in whitelisted_channels:
+            await client.process_commands(message)
+            return
+
+        if message.attachments or re.search(r'(https?://(?:www\.)?tenor\.com/.+|https?://\S+\.gif)', message.content):
+
+            server_id = message.guild.id
+
+            # Check if the user is whitelisted (their messages won't be deleted)
+            if message.author.id in whitelisted_users:
+                await client.process_commands(message)
+                return
+
+            # Initialize or update the image count for the server
+            if server_id not in image_uploads:
+                image_uploads[server_id] = {"count": 1, "timestamp": datetime.now()}
+            else:
+                current_time = datetime.now()
+                last_timestamp = image_uploads[server_id]["timestamp"]
+
+                # Check if the cooldown has passed
+                if current_time - last_timestamp >= timedelta(seconds=COOLDOWN_DURATION):
+                    image_uploads[server_id] = {"count": 1, "timestamp": current_time}
+                else:
+                    image_uploads[server_id]["count"] += 1
+                    image_uploads[server_id]["timestamp"] = current_time
+
+                # Check if the server has exceeded the image limit
+                if image_uploads[server_id]["count"] > IMAGE_LIMIT:
+                    await message.delete()
+                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} images/{COOLDOWN_DURATION} seconds). Try again later or, if someone's spamming, ping the staff team!.")
+                    await asyncio.sleep(4)
+                    await warning_message.delete()
+                    return
+
+    await client.process_commands(message)
+
+# Background task to clear image counts every 1 minute
+@tasks.loop(seconds=60)
+async def clear_image_counts():
+    current_time = datetime.now()
+    for server_id, data in list(image_uploads.items()):
+        last_timestamp = data["timestamp"]
+        if current_time - last_timestamp >= timedelta(seconds=60):
+            del image_uploads[server_id]
+
+@clear_image_counts.before_loop
+async def before_clear_image_counts():
+    await client.wait_until_ready()
+
+#ReactingCh = 1059899526992904212
+#SendingCh = 1107624079210582016
+#staremoji = "⭐" # it was entire variable for a reason
+
+#@client.event
+#async def on_raw_reaction_add(payload):
+#    if payload.channel_id == ReactingCh:
+#        if payload.emoji.name == staremoji:
+#            channel = client.get_channel(payload.channel_id)
+#            message = await channel.fetch_message(payload.message_id)
+            
+            # Check if the checkemoji is not in reactions
+#            checkemoji = client.get_emoji(1149027798405619792)
+#            if checkemoji not in [str(emj.emoji) for emj in message.reactions]:
+#                reaction = None
+#                for react in message.reactions:
+#                    if react.emoji == payload.emoji.name:
+#                        reaction = react
+#                        break
+#
+#                if reaction and reaction.count == 2:  # STARS COUNT TO TRIGGER STARBOARD
+#                    ctx = client.get_channel(int(SendingCh))
+ #                   msg = message.content
+  #                  embedsContent = []
+   #                 if message.attachments:
+    #                    for attachment in message.attachments:
+     #                       file = await attachment.to_file()
+      #                      embedsContent.append(file)
+       #             original_message_url = message.jump_url  # Get the jump URL of the original message
+       #
+              #      if not embedsContent:
+               #         await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}')
+                #    else:
+                 #       await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}', files=embedsContent)
+                 #
+                    # Add the checkemoji reaction using the emoji ID
+        #            checkemoji_id = 1149027798405619792  # Replace with your emoji ID
+         #           await message.add_reaction(client.get_emoji(checkemoji_id))
+
+
+client.run('')
