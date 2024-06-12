@@ -8,7 +8,7 @@ import re
 
 
 #discord
-client = commands.Bot(command_prefix = '!', intents = discord.Intents.all())
+client : commands.Bot = commands.Bot(command_prefix = '!', intents = discord.Intents.all())
 
 ##
 url = "https://www.roblox.com/games/8197423034/get-a-drink-at-3-am-beta"
@@ -21,8 +21,7 @@ async def _create_starboard_table():
     async with aiosqlite.connect("starboard.db") as db:
         await db.execute('''CREATE TABLE IF NOT EXISTS starboard (
         message_id INTEGER PRIMARY KEY,
-        starboard_message_id INTEGER,
-        star_count INTEGER)
+        starboard_message_id INTEGER)
         ''')
         await db.commit()
 
@@ -186,20 +185,64 @@ async def clear_image_counts():
 async def before_clear_image_counts():
     await client.wait_until_ready()
 
-# Constants, edit them for your own server(TM)
+# Constants
 SENDING_CHANNEL = 0
-REACT_CHANNEL = 0
+REACT_CHANNELS = [0] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
 TRIGGER_COUNT = 1
-
-
-# please use cogs, your code is messy
+EMOJI_ID = 0 # I have no idea what the fuck is 1149027798405619792
+STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 
 
 @client.event
 async def on_raw_reaction_add(payload):
-    if not payload.channel_id == REACT_CHANNEL:
+    if not payload.channel_id in REACT_CHANNELS:
         return
+    if not payload.emoji.name == STAR_EMOJI:
+        return
+    channel = client.get_channel(payload.channel_id)
+    message : discord.Message = await channel.fetch_message(payload.message_id)
+
+    # check that emoji thing
+    chk = client.get_emoji(EMOJI_ID)
+    if chk in [str(emj.emoji) for emj in message.reactions]:
+        return
+    
+    # check message id (check if this thing was already posted)
+    value = None
+    async with aiosqlite.connect("starboard.db") as db:
+        cursor = await db.execute("SELECT * FROM starboard WHERE message_id = ?", (payload.message_id))
+        value = await cursor.fetchone()
+    if value:
+        return
+
+    reaction = None
+    for react in message.reactions:
+        if react.emoji == payload.emoji.name:
+            reaction = react
+            return
+    if not reaction or reaction.count < TRIGGER_COUNT:
+        return
+    
+    # send the message!
+    ctx : discord.channel = client.get_channel(SENDING_CHANNEL)
+    content = message.content
+    attachments = []
+    jmp = message.jump_url
+    if message.attachments != []:
+        for attachment in message.attachments:
+            f = attachment.to_file()
+            attachments.append(f)
+    if message.attachments == [] and STRICT_MODE:
+        return
+    msg = await ctx.send(f':star: {reaction.count} - **{message.author}**: {content}\nJump to Message: {jmp}', files=attachment)
+
+    # add the emoji whatever ID
+    await message.add_reaction(chk)
+    # Insert the thing into the database
+    async with aiosqlite.connect("starboard.db") as db:
+        await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
+        await db.commit()
     
 
 file = open("token.txt", "r")
