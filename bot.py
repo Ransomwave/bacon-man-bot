@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta  # Import the datetime module
-import asyncio
+import asyncio, aiosqlite
 import re
 
 
@@ -16,10 +16,21 @@ response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 ##
 
+# Initializes the starboard SQLite table (obviously)
+async def _create_starboard_table(): 
+    async with aiosqlite.connect("starboard.db") as db:
+        await db.execute('''CREATE TABLE IF NOT EXISTS starboard (
+        message_id INTEGER PRIMARY KEY,
+        starboard_message_id INTEGER,
+        star_count INTEGER)
+        ''')
+        await db.commit()
+
 @client.event
 async def on_ready():
     activity = discord.Activity(type=discord.ActivityType.playing, name="get a drink at 3 am!")
     await client.change_presence(status=discord.Status.online, activity=activity)
+    await _create_starboard_table()
     print('=============== RUNNING ===============')
 
 @client.slash_command(name="ping", description="Get the bot's latency.")
@@ -184,40 +195,12 @@ TRIGGER_COUNT = 1
 
 # please use cogs, your code is messy
 
-# @client.event
-# async def on_raw_reaction_add(payload):
-#    if payload.channel_id == ReactingCh:
-#        if payload.emoji.name == staremoji:
-#            channel = client.get_channel(payload.channel_id)
-#            message = await channel.fetch_message(payload.message_id)
-            
-#             #Check if the checkemoji is not in reactions
-#            checkemoji = client.get_emoji(1149027798405619792)
-#            if checkemoji not in [str(emj.emoji) for emj in message.reactions]:
-#                reaction = None
-#                for react in message.reactions:
-#                    if react.emoji == payload.emoji.name:
-#                        reaction = react
-#                        break
 
-#                if reaction and reaction.count == 2:  # STARS COUNT TO TRIGGER STARBOARD
-#                    ctx = client.get_channel(int(SendingCh))
-#                    msg = message.content
-#                    embedsContent = []
-#                    if message.attachments:
-#                        for attachment in message.attachments:
-#                            file = await attachment.to_file()
-#                            embedsContent.append(file)
-#                    original_message_url = message.jump_url  # Get the jump URL of the original message
-       
-#                    if not embedsContent:
-#                        await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}')
-#                    else:
-#                        await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}', files=embedsContent)
-                 
-#                     #Add the checkemoji reaction using the emoji ID
-#                    checkemoji_id = 1149027798405619792  # Replace with your emoji ID
-#                    await message.add_reaction(client.get_emoji(checkemoji_id))
+@client.event
+async def on_raw_reaction_add(payload):
+    if not payload.channel_id == REACT_CHANNEL:
+        return
+    
 
 file = open("token.txt", "r")
 token = file.read()
