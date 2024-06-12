@@ -175,18 +175,23 @@ async def clear_image_counts():
 async def before_clear_image_counts():
     await client.wait_until_ready()
 
-#ReactingCh = 1059899526992904212
-#SendingCh = 1107624079210582016
-#staremoji = "⭐" # it was entire variable for a reason
+# Constants, edit them for your own server(TM)
+SENDING_CHANNEL = 0
+REACT_CHANNEL = 0
+STAR_EMOJI = "⭐"
+TRIGGER_COUNT = 1
 
-#@client.event
-#async def on_raw_reaction_add(payload):
+
+# please use cogs, your code is messy
+
+# @client.event
+# async def on_raw_reaction_add(payload):
 #    if payload.channel_id == ReactingCh:
 #        if payload.emoji.name == staremoji:
 #            channel = client.get_channel(payload.channel_id)
 #            message = await channel.fetch_message(payload.message_id)
             
-            # Check if the checkemoji is not in reactions
+#             #Check if the checkemoji is not in reactions
 #            checkemoji = client.get_emoji(1149027798405619792)
 #            if checkemoji not in [str(emj.emoji) for emj in message.reactions]:
 #                reaction = None
@@ -194,25 +199,25 @@ async def before_clear_image_counts():
 #                    if react.emoji == payload.emoji.name:
 #                        reaction = react
 #                        break
-#
+
 #                if reaction and reaction.count == 2:  # STARS COUNT TO TRIGGER STARBOARD
 #                    ctx = client.get_channel(int(SendingCh))
- #                   msg = message.content
-  #                  embedsContent = []
-   #                 if message.attachments:
-    #                    for attachment in message.attachments:
-     #                       file = await attachment.to_file()
-      #                      embedsContent.append(file)
-       #             original_message_url = message.jump_url  # Get the jump URL of the original message
-       #
-              #      if not embedsContent:
-               #         await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}')
-                #    else:
-                 #       await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}', files=embedsContent)
-                 #
-                    # Add the checkemoji reaction using the emoji ID
-        #            checkemoji_id = 1149027798405619792  # Replace with your emoji ID
-         #           await message.add_reaction(client.get_emoji(checkemoji_id))
+#                    msg = message.content
+#                    embedsContent = []
+#                    if message.attachments:
+#                        for attachment in message.attachments:
+#                            file = await attachment.to_file()
+#                            embedsContent.append(file)
+#                    original_message_url = message.jump_url  # Get the jump URL of the original message
+       
+#                    if not embedsContent:
+#                        await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}')
+#                    else:
+#                        await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}', files=embedsContent)
+                 
+#                     #Add the checkemoji reaction using the emoji ID
+#                    checkemoji_id = 1149027798405619792  # Replace with your emoji ID
+#                    await message.add_reaction(client.get_emoji(checkemoji_id))
 
 file = open("token.txt", "r")
 token = file.read()
