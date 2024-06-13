@@ -3,12 +3,12 @@ from discord.ext import commands, tasks
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta  # Import the datetime module
-import asyncio
+import asyncio, aiosqlite
 import re
 
 
 #discord
-client = commands.Bot(command_prefix = '!', intents = discord.Intents.all())
+client : commands.Bot = commands.Bot(command_prefix = '!', intents = discord.Intents.all())
 
 ##
 url = "https://www.roblox.com/games/8197423034/get-a-drink-at-3-am-beta"
@@ -16,10 +16,31 @@ response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 ##
 
+# Initializes the starboard SQLite table (obviously)
+async def _create_starboard_table(): 
+    async with aiosqlite.connect("starboard.db") as db:
+        # Create the primary starboard SQL table, if they don't exist
+        print("Initializing starboard database")
+        await db.execute('''CREATE TABLE IF NOT EXISTS starboard (
+        message_id INTEGER PRIMARY KEY,
+        starboard_message_id INTEGER)
+        ''')
+        
+        await db.commit()
+        print("starboard.db initialized")
+
+@client.event
+async def on_command_error(ctx, exp : Exception): 
+    if exp == commands.MissingPermissions:
+        await ctx.send("Access denied.")
+    else:
+        raise exp
+
 @client.event
 async def on_ready():
     activity = discord.Activity(type=discord.ActivityType.playing, name="get a drink at 3 am!")
     await client.change_presence(status=discord.Status.online, activity=activity)
+    await _create_starboard_table()
     print('=============== RUNNING ===============')
 
 @client.slash_command(name="ping", description="Get the bot's latency.")
@@ -93,7 +114,7 @@ async def help(ctx):
     stats_usage = "/stats [id (leave blank for gada3 stats)]"
     embed.add_field(name="/stats", value=f"Description: {stats_description}\nUsage: `{stats_usage}`", inline=False)
 
-    embed.add_field(name="Client Events", value="This bot has a few Client Events\n- Add vote reactions to all messages in a channel.\n- Limit media every 60 seconds to prevent attachment spam.\nMore Roblox-related functionality will be added in the future!", inline=False)
+    embed.add_field(name="Client Events", value="This bot has a few Client Events\n- Add vote reactions to all messages in a channel.\n- Limit media every 60 seconds to prevent attachment spam.\n- Starboard functionality in art channels\nMore Roblox-related functionality will be added in the future!", inline=False)
 
     embed.set_footer(text="Made with ❤️ by Ransomwave")
     
@@ -175,44 +196,59 @@ async def clear_image_counts():
 async def before_clear_image_counts():
     await client.wait_until_ready()
 
-#ReactingCh = 1059899526992904212
-#SendingCh = 1107624079210582016
-#staremoji = "⭐" # it was entire variable for a reason
+# Constants
+SENDING_CHANNEL = 1107624079210582016
+REACT_CHANNELS = [1059899526992904212] # Just in case if you want to use multiple or whatever
+STAR_EMOJI = "⭐"
+TRIGGER_COUNT = 5
+STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
+BLACKLIST = [] # Add IDs of people you hate the most.
 
-#@client.event
-#async def on_raw_reaction_add(payload):
-#    if payload.channel_id == ReactingCh:
-#        if payload.emoji.name == staremoji:
-#            channel = client.get_channel(payload.channel_id)
-#            message = await channel.fetch_message(payload.message_id)
-            
-            # Check if the checkemoji is not in reactions
-#            checkemoji = client.get_emoji(1149027798405619792)
-#            if checkemoji not in [str(emj.emoji) for emj in message.reactions]:
-#                reaction = None
-#                for react in message.reactions:
-#                    if react.emoji == payload.emoji.name:
-#                        reaction = react
-#                        break
-#
-#                if reaction and reaction.count == 2:  # STARS COUNT TO TRIGGER STARBOARD
-#                    ctx = client.get_channel(int(SendingCh))
- #                   msg = message.content
-  #                  embedsContent = []
-   #                 if message.attachments:
-    #                    for attachment in message.attachments:
-     #                       file = await attachment.to_file()
-      #                      embedsContent.append(file)
-       #             original_message_url = message.jump_url  # Get the jump URL of the original message
-       #
-              #      if not embedsContent:
-               #         await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}')
-                #    else:
-                 #       await ctx.send(f':star: {reaction.count} - **{message.author}**: {msg}\nJump to Message: {original_message_url}', files=embedsContent)
-                 #
-                    # Add the checkemoji reaction using the emoji ID
-        #            checkemoji_id = 1149027798405619792  # Replace with your emoji ID
-         #           await message.add_reaction(client.get_emoji(checkemoji_id))
+@client.event
+async def on_raw_reaction_add(payload):
+    if not payload.channel_id in REACT_CHANNELS:
+        return
+    if not payload.emoji.name == STAR_EMOJI:
+        return
+    channel = client.get_channel(payload.channel_id)
+    message : discord.Message = await channel.fetch_message(payload.message_id)
+
+    if message.author in BLACKLIST:
+        return
+    
+    # check message id (check if this thing was already posted)
+    value = None
+    async with aiosqlite.connect("starboard.db") as db:
+        cursor = await db.execute("SELECT * FROM starboard WHERE message_id = ?", (payload.message_id, ))
+        value = await cursor.fetchone()
+    if value:
+        return
+
+    reaction = None
+    for react in message.reactions:
+        if react.emoji == payload.emoji.name:
+            reaction = react
+            break
+    if not reaction or reaction.count < TRIGGER_COUNT:
+        return
+    
+
+    ctx : discord.channel = client.get_channel(SENDING_CHANNEL)
+    content = message.content
+    attachments = []
+    jmp = message.jump_url
+    if message.attachments != []:
+        for attachment in message.attachments:
+            f = await attachment.to_file()
+            attachments.append(f)
+    if message.attachments == [] and STRICT_MODE:
+        return
+    msg = await ctx.send(f":star: {reaction.count}/{str(TRIGGER_COUNT)}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
+
+    # Insert the thing into the database
+    async with aiosqlite.connect("starboard.db") as db:
+        await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
+        await db.commit()
 
 file = open("token.txt", "r")
 token = file.read()
