@@ -20,6 +20,7 @@ soup = BeautifulSoup(response.text, 'html.parser')
 async def _create_starboard_table(): 
     async with aiosqlite.connect("starboard.db") as db:
         # Create two primary starboard SQL tables, if they don't exist
+        print("Initializing starboard database")
         await db.execute('''CREATE TABLE IF NOT EXISTS starboard (
         message_id INTEGER PRIMARY KEY,
         starboard_message_id INTEGER)
