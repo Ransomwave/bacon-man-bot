@@ -114,7 +114,7 @@ async def help(ctx):
     stats_usage = "/stats [id (leave blank for gada3 stats)]"
     embed.add_field(name="/stats", value=f"Description: {stats_description}\nUsage: `{stats_usage}`", inline=False)
 
-    embed.add_field(name="Client Events", value="This bot has a few Client Events\n- Add vote reactions to all messages in a channel.\n- Limit media every 60 seconds to prevent attachment spam.\nMore Roblox-related functionality will be added in the future!", inline=False)
+    embed.add_field(name="Client Events", value="This bot has a few Client Events\n- Add vote reactions to all messages in a channel.\n- Limit media every 60 seconds to prevent attachment spam.\n- Starboard functionality in art channels\nMore Roblox-related functionality will be added in the future!", inline=False)
 
     embed.set_footer(text="Made with ❤️ by Ransomwave")
     
@@ -197,12 +197,11 @@ async def before_clear_image_counts():
     await client.wait_until_ready()
 
 # Constants
-SENDING_CHANNEL = 1250782199029039125
-REACT_CHANNELS = [1250782183203930162, 1250782217609809930] # Just in case if you want to use multiple or whatever
+SENDING_CHANNEL = 1107624079210582016
+REACT_CHANNELS = [1059899526992904212] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
-TRIGGER_COUNT = 1
-EMOJI_ID = 1097009830713102417 # Emoji that will be put on the message that has honor to be starboarded
-STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
+TRIGGER_COUNT = 5
+STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 BLACKLIST = [] # Add IDs of people you hate the most.
 
 @client.event
@@ -215,11 +214,6 @@ async def on_raw_reaction_add(payload):
     message : discord.Message = await channel.fetch_message(payload.message_id)
 
     if message.author in BLACKLIST:
-        return
-
-    # check that emoji thing
-    chk = client.get_emoji(EMOJI_ID)
-    if chk in [str(emj.emoji) for emj in message.reactions]:
         return
     
     # check message id (check if this thing was already posted)
@@ -250,9 +244,7 @@ async def on_raw_reaction_add(payload):
     if message.attachments == [] and STRICT_MODE:
         return
     msg = await ctx.send(f":star: {reaction.count}/{str(TRIGGER_COUNT)}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
-
-    # add the emoji whatever ID
-    await message.add_reaction(chk)
+    
     # Insert the thing into the database
     async with aiosqlite.connect("starboard.db") as db:
         await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
