@@ -200,8 +200,8 @@ async def before_clear_image_counts():
 SENDING_CHANNEL = 1107624079210582016
 REACT_CHANNELS = [1059899526992904212] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
-TRIGGER_COUNT = 5
-STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
+TRIGGER_COUNT = 1
+STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 BLACKLIST = [] # Add IDs of people you hate the most.
 
 @client.event
@@ -244,7 +244,7 @@ async def on_raw_reaction_add(payload):
     if message.attachments == [] and STRICT_MODE:
         return
     msg = await ctx.send(f":star: {reaction.count}/{str(TRIGGER_COUNT)}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
-    
+
     # Insert the thing into the database
     async with aiosqlite.connect("starboard.db") as db:
         await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
