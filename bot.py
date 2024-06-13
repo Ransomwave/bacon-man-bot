@@ -201,7 +201,6 @@ SENDING_CHANNEL = 1250782199029039125
 REACT_CHANNELS = [1250782183203930162, 1250782217609809930] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
 TRIGGER_COUNT = 1
-#EMOJI_ID = 1097009830713102417 # Emoji that will be put on the message that has honor to be starboarded
 STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 BLACKLIST = [] # Add IDs of people you hate the most.
 
@@ -216,11 +215,6 @@ async def on_raw_reaction_add(payload):
 
     if message.author in BLACKLIST:
         return
-
-    # check that emoji thing
-    #chk = client.get_emoji(EMOJI_ID)
-    #if chk in [str(emj.emoji) for emj in message.reactions]:
-    #    return
     
     # check message id (check if this thing was already posted)
     value = None
@@ -251,8 +245,6 @@ async def on_raw_reaction_add(payload):
         return
     msg = await ctx.send(f":star: {reaction.count}/{str(TRIGGER_COUNT)}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
 
-    # add the emoji whatever ID
-    #await message.add_reaction(chk)
     # Insert the thing into the database
     async with aiosqlite.connect("starboard.db") as db:
         await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
