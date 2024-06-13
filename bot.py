@@ -190,7 +190,7 @@ SENDING_CHANNEL = 0
 REACT_CHANNELS = [0] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
 TRIGGER_COUNT = 1
-EMOJI_ID = 0 # I have no idea what the fuck is 1149027798405619792
+EMOJI_ID = 0
 STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 
 
