@@ -189,6 +189,8 @@ async def on_message(message):
                     await asyncio.sleep(4)
                     await warning_message.delete()
                     return
+    if message.channel.id in REACT_CHANNELS:
+        await message.add_reaction(STAR_EMOJI)
 
     await client.process_commands(message)
 
@@ -206,11 +208,11 @@ async def before_clear_image_counts():
     await client.wait_until_ready()
 
 # Constants
-SENDING_CHANNEL = 0
-REACT_CHANNELS = [0] # Just in case if you want to use multiple or whatever
+SENDING_CHANNEL = 1250782199029039125
+REACT_CHANNELS = [1250782183203930162, 1250782217609809930] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
-TRIGGER_COUNT = 1
-EMOJI_ID = 0
+TRIGGER_COUNT = 2
+EMOJI_ID = 1097009830713102417
 STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 
 # variables
@@ -236,7 +238,7 @@ async def on_raw_reaction_add(payload):
     # check message id (check if this thing was already posted)
     value = None
     async with aiosqlite.connect("starboard.db") as db:
-        cursor = await db.execute("SELECT * FROM starboard WHERE message_id = ?", (payload.message_id))
+        cursor = await db.execute("SELECT * FROM starboard WHERE message_id = ?", (payload.message_id, ))
         value = await cursor.fetchone()
     if value:
         return
@@ -245,11 +247,11 @@ async def on_raw_reaction_add(payload):
     for react in message.reactions:
         if react.emoji == payload.emoji.name:
             reaction = react
-            return
+            break
     if not reaction or reaction.count < TRIGGER_COUNT:
         return
     
-    # send the message!
+
     ctx : discord.channel = client.get_channel(SENDING_CHANNEL)
     content = message.content
     attachments = []
@@ -260,7 +262,7 @@ async def on_raw_reaction_add(payload):
             attachments.append(f)
     if message.attachments == [] and STRICT_MODE:
         return
-    msg = await ctx.send(f':star: {reaction.count} - **{message.author}**: {content}\nJump to Message: {jmp}', files=attachment)
+    msg = await ctx.send(f":star: {reaction.count}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
 
     # add the emoji whatever ID
     await message.add_reaction(chk)
