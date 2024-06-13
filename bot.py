@@ -189,8 +189,6 @@ async def on_message(message):
                     await asyncio.sleep(4)
                     await warning_message.delete()
                     return
-    if message.channel.id in REACT_CHANNELS:
-        await message.add_reaction(STAR_EMOJI)
 
     await client.process_commands(message)
 
@@ -211,9 +209,9 @@ async def before_clear_image_counts():
 SENDING_CHANNEL = 1250782199029039125
 REACT_CHANNELS = [1250782183203930162, 1250782217609809930] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
-TRIGGER_COUNT = 2
-EMOJI_ID = 1097009830713102417
-STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
+TRIGGER_COUNT = 1
+EMOJI_ID = 1097009830713102417 # Emoji that will be put on the message that has honor to be starboarded
+STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 
 # variables
 blacklist = [] # People you hate the most.
@@ -262,7 +260,7 @@ async def on_raw_reaction_add(payload):
             attachments.append(f)
     if message.attachments == [] and STRICT_MODE:
         return
-    msg = await ctx.send(f":star: {reaction.count}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
+    msg = await ctx.send(f":star: {reaction.count}/{str(TRIGGER_COUNT)}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
 
     # add the emoji whatever ID
     await message.add_reaction(chk)
@@ -280,7 +278,7 @@ async def blacklist_add(ctx, member : discord.Member):
         return
     blacklist.append(member.id)
     async with aiosqlite.connect("starboard.db") as db:
-        await db.execute("INSERT INTO blacklist (id) VALUES (?)", (member.id))
+        await db.execute("INSERT INTO blacklist (id) VALUES (?)", (member.id,))
         await db.commit()
     await ctx.send("Operation successful!")
 
@@ -292,7 +290,7 @@ async def blacklist_remove(ctx, member : discord.Member):
         return
     blacklist.remove(member.id)
     async with aiosqlite.connect("starboard.db") as db:
-        await db.execute("DELETE FROM blacklist WHERE id = ?", (member.id))
+        await db.execute("DELETE FROM blacklist WHERE id = ?", (member.id,))
 
 file = open("token.txt", "r")
 token = file.read()
