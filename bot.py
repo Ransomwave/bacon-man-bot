@@ -191,6 +191,7 @@ REACT_CHANNELS = [0] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
 TRIGGER_COUNT = 1
 EMOJI_ID = 0
+BLACKLIST = [] # People who you hate the most.
 STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 
 
@@ -202,6 +203,9 @@ async def on_raw_reaction_add(payload):
         return
     channel = client.get_channel(payload.channel_id)
     message : discord.Message = await channel.fetch_message(payload.message_id)
+
+    if message.author in BLACKLIST:
+        return
 
     # check that emoji thing
     chk = client.get_emoji(EMOJI_ID)
