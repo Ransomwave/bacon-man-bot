@@ -19,24 +19,15 @@ soup = BeautifulSoup(response.text, 'html.parser')
 # Initializes the starboard SQLite table (obviously)
 async def _create_starboard_table(): 
     async with aiosqlite.connect("starboard.db") as db:
-        # Create two primary starboard SQL tables, if they don't exist
+        # Create the primary starboard SQL table, if they don't exist
         print("Initializing starboard database")
         await db.execute('''CREATE TABLE IF NOT EXISTS starboard (
         message_id INTEGER PRIMARY KEY,
         starboard_message_id INTEGER)
         ''')
-        await db.execute('CREATE TABLE IF NOT EXISTS blacklist (id INTEGER PRIMARY KEY)')
+        
         await db.commit()
-        # Get the blacklist from the database
-        cur = await db.execute("SELECT * FROM blacklist")
-        bb = await cur.fetchall()
-        await format_blacklist(bb)
-        print("starboard.db loaded")
-
-async def format_blacklist(database_table : list):
-    # Transforming tuples in the list to the blacklist, just to make sure that code will not shit itself
-    for i in database_table:
-        blacklist.append(i[0])
+        print("starboard.db initialized")
 
 @client.event
 async def on_command_error(ctx, exp : Exception): 
@@ -212,9 +203,7 @@ STAR_EMOJI = "⭐"
 TRIGGER_COUNT = 1
 EMOJI_ID = 1097009830713102417 # Emoji that will be put on the message that has honor to be starboarded
 STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
-
-# variables
-blacklist = [] # People you hate the most.
+BLACKLIST = [] # Add IDs of people you hate the most.
 
 @client.event
 async def on_raw_reaction_add(payload):
@@ -225,7 +214,7 @@ async def on_raw_reaction_add(payload):
     channel = client.get_channel(payload.channel_id)
     message : discord.Message = await channel.fetch_message(payload.message_id)
 
-    if message.author in blacklist:
+    if message.author in BLACKLIST:
         return
 
     # check that emoji thing
@@ -268,29 +257,6 @@ async def on_raw_reaction_add(payload):
     async with aiosqlite.connect("starboard.db") as db:
         await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
         await db.commit()
-
-## Starboard commands (i am not writing help descriptions for those commands, no thanks)
-@discord.slash_command()
-@commands.has_permissions(administrator=True)
-async def blacklist_add(ctx, member : discord.Member):
-    if member in blacklist:
-        await ctx.send("This member is already in the blacklist!")
-        return
-    blacklist.append(member.id)
-    async with aiosqlite.connect("starboard.db") as db:
-        await db.execute("INSERT INTO blacklist (id) VALUES (?)", (member.id,))
-        await db.commit()
-    await ctx.send("Operation successful!")
-
-@discord.slash_command()
-@commands.has_permissions(administrator=True)
-async def blacklist_remove(ctx, member : discord.Member):
-    if not member in blacklist:
-        await ctx.send("This member is not in the blacklist!")
-        return
-    blacklist.remove(member.id)
-    async with aiosqlite.connect("starboard.db") as db:
-        await db.execute("DELETE FROM blacklist WHERE id = ?", (member.id,))
 
 file = open("token.txt", "r")
 token = file.read()
