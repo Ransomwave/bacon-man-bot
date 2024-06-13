@@ -211,7 +211,7 @@ REACT_CHANNELS = [1250782183203930162, 1250782217609809930] # Just in case if yo
 STAR_EMOJI = "⭐"
 TRIGGER_COUNT = 1
 EMOJI_ID = 1097009830713102417 # Emoji that will be put on the message that has honor to be starboarded
-STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
+STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 
 # variables
 blacklist = [] # People you hate the most.
@@ -256,7 +256,7 @@ async def on_raw_reaction_add(payload):
     jmp = message.jump_url
     if message.attachments != []:
         for attachment in message.attachments:
-            f = attachment.to_file()
+            f = await attachment.to_file()
             attachments.append(f)
     if message.attachments == [] and STRICT_MODE:
         return
