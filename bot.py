@@ -200,8 +200,8 @@ async def before_clear_image_counts():
 SENDING_CHANNEL = 1107624079210582016
 REACT_CHANNELS = [1059899526992904212] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
-TRIGGER_COUNT = 1
-STRICT_MODE = False # Toggle strict mode. If it's on, anyone without attachments will be discarded.
+TRIGGER_COUNT = 5
+STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 BLACKLIST = [] # Add IDs of people you hate the most.
 
 @client.event
