@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta  # Import the datetime module
-import asyncio, aiosqlite
+import asyncio
 import re
 from data import StarboardDatabase
 from jsons import JSONStarboard
