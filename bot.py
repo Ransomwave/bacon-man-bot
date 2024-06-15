@@ -187,10 +187,10 @@ async def before_clear_image_counts():
     await client.wait_until_ready()
 
 # Constants (not really)
-SENDING_CHANNEL = 1251595032532881491 # 1107624079210582016 
-REACT_CHANNELS = [1251595018133831740] # [1059899526992904212] # Just in case if you want to use multiple or whatever
+SENDING_CHANNEL = 1107624079210582016 
+REACT_CHANNELS = [1059899526992904212] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
-TRIGGER_COUNT = 1 # 5
+TRIGGER_COUNT = 5
 STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 BLACKLIST = [] # Add IDs of people you hate the most.
 DB_INSTANCE : StarboardDatabase = JSONStarboard() # Toggle inbetween SQL DB instance and JSON DB instance. Created for shitty hosts like yours :)
