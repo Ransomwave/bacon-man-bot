@@ -5,6 +5,9 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta  # Import the datetime module
 import asyncio, aiosqlite
 import re
+from data import StarboardDatabase
+from jsons import JSONStarboard
+from sql import SQLStarboard
 
 
 #discord
@@ -15,19 +18,6 @@ url = "https://www.roblox.com/games/8197423034/get-a-drink-at-3-am-beta"
 response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 ##
-
-# Initializes the starboard SQLite table (obviously)
-async def _create_starboard_table(): 
-    async with aiosqlite.connect("starboard.db") as db:
-        # Create the primary starboard SQL table, if they don't exist
-        print("Initializing starboard database")
-        await db.execute('''CREATE TABLE IF NOT EXISTS starboard (
-        message_id INTEGER PRIMARY KEY,
-        starboard_message_id INTEGER)
-        ''')
-        
-        await db.commit()
-        print("starboard.db initialized")
 
 @client.event
 async def on_command_error(ctx, exp : Exception): 
@@ -40,7 +30,7 @@ async def on_command_error(ctx, exp : Exception):
 async def on_ready():
     activity = discord.Activity(type=discord.ActivityType.playing, name="get a drink at 3 am!")
     await client.change_presence(status=discord.Status.online, activity=activity)
-    await _create_starboard_table()
+    await DB_INSTANCE.init_db()
     print('=============== RUNNING ===============')
 
 @client.slash_command(name="ping", description="Get the bot's latency.")
@@ -196,13 +186,16 @@ async def clear_image_counts():
 async def before_clear_image_counts():
     await client.wait_until_ready()
 
-# Constants
-SENDING_CHANNEL = 1107624079210582016
-REACT_CHANNELS = [1059899526992904212] # Just in case if you want to use multiple or whatever
+# Constants (not really)
+SENDING_CHANNEL = 1251595032532881491 # 1107624079210582016 
+REACT_CHANNELS = [1251595018133831740] # [1059899526992904212] # Just in case if you want to use multiple or whatever
 STAR_EMOJI = "⭐"
-TRIGGER_COUNT = 5
+TRIGGER_COUNT = 1 # 5
 STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
 BLACKLIST = [] # Add IDs of people you hate the most.
+DB_INSTANCE : StarboardDatabase = JSONStarboard() # Toggle inbetween SQL DB instance and JSON DB instance. Created for shitty hosts like yours :)
+                                        # It should be a StarboardDatabase instance, you should toggle inbetween SQLStarboard and JSONStarboard classes to change it
+                                        # Also, these classes is fully async, don't forget your awaits or whatever when you will use them again (why)
 
 @client.event
 async def on_raw_reaction_add(payload):
@@ -217,11 +210,8 @@ async def on_raw_reaction_add(payload):
         return
     
     # check message id (check if this thing was already posted)
-    value = None
-    async with aiosqlite.connect("starboard.db") as db:
-        cursor = await db.execute("SELECT * FROM starboard WHERE message_id = ?", (payload.message_id, ))
-        value = await cursor.fetchone()
-    if value:
+    result = await DB_INSTANCE.has_id(payload.message_id)
+    if result == False:
         return
 
     reaction = None
@@ -246,11 +236,9 @@ async def on_raw_reaction_add(payload):
     msg = await ctx.send(f":star: {reaction.count}/{str(TRIGGER_COUNT)}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
 
     # Insert the thing into the database
-    async with aiosqlite.connect("starboard.db") as db:
-        await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
-        await db.commit()
+    await DB_INSTANCE.write_data(payload.message_id)
 
-file = open("token.txt", "r")
+file = open("token.txt", "r") # this is temporary
 token = file.read()
 client.run(token)
 file.close()
