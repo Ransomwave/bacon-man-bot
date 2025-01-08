@@ -1,5 +1,5 @@
-import nextcord as discord
-from discord.ext import commands, tasks
+import nextcord as nextcord
+from nextcord.ext import commands, tasks
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta  # Import the datetime module
@@ -8,7 +8,7 @@ import re
 
 
 #discord
-client : commands.Bot = commands.Bot(command_prefix = '!', intents = discord.Intents.all())
+client : commands.Bot = commands.Bot(command_prefix = '!', intents = nextcord.Intents.all())
 
 ##
 url = "https://www.roblox.com/games/8197423034/get-a-drink-at-3-am-beta"
@@ -38,15 +38,15 @@ async def on_command_error(ctx, exp : Exception):
 
 @client.event
 async def on_ready():
-    activity = discord.Activity(type=discord.ActivityType.playing, name="get a drink at 3 am!")
-    await client.change_presence(status=discord.Status.online, activity=activity)
+    activity = nextcord.Activity(type=nextcord.ActivityType.playing, name="get a drink at 3 am!")
+    await client.change_presence(status=nextcord.Status.online, activity=activity)
     await _create_starboard_table()
     print('=============== RUNNING ===============')
 
 @client.slash_command(name="ping", description="Get the bot's latency.")
 async def ping(ctx):
     latency = client.latency * 1000
-    embed = discord.Embed(colour=discord.Colour.red())
+    embed = nextcord.Embed(colour=nextcord.Colour.red())
     embed.add_field(name="Client Latency", value=f"Ping value: **{latency}ms**")
     await ctx.send(embed=embed)
 
@@ -91,7 +91,7 @@ async def stats(ctx, id: int = 8197423034):
     iconJSON = iconRequest.json()
     icon = iconJSON['data'][0]['imageUrl']
 
-    embed = discord.Embed(title="Game Stats:", description=f"{game_name} ({id})", color=0xff4747)
+    embed = nextcord.Embed(title="Game Stats:", description=f"{game_name} ({id})", color=0xff4747)
     embed.set_thumbnail(url=icon)
     embed.add_field(name="Creator:", value=creator, inline=False)
     embed.add_field(name="Current Player Count:", value=playing, inline=True)
@@ -102,7 +102,7 @@ async def stats(ctx, id: int = 8197423034):
 
 @client.slash_command(description="Show available commands and their usage")
 async def help(ctx):
-    embed = discord.Embed(title="Command List", color=0xff4747)
+    embed = nextcord.Embed(title="Command List", color=0xff4747)
     
     # Ping Command
     ping_description = "Get the bot's latency."
@@ -196,6 +196,33 @@ async def clear_image_counts():
 async def before_clear_image_counts():
     await client.wait_until_ready()
 
+# Forum channel ID where the bot should reply
+TARGET_FORUM_CHANNEL_ID = 1283902220630491178
+
+@client.event
+async def on_thread_create(thread: nextcord.Thread):
+    # Check if the thread belongs to the target forum channel
+    if thread.parent_id != TARGET_FORUM_CHANNEL_ID:
+        return
+
+    try:
+        # Ensure the thread has started before interacting
+        await thread.join()
+
+        # Send a custom reply message to the thread author
+        author_mention = thread.owner.mention if thread.owner else "Unknown"
+        await thread.send(
+            f"Hey, {author_mention}. Thanks for reporting a bug! "
+            f"Keep in mind that <@777460173115097098> might take up to 1 day to reply!\n\n"
+            f"In the meantime, be sure to check the guidelines & add any further information you think could help. "
+            f"Everything helps!"
+        )
+
+        print(f"Replied to thread in bug-report: {thread.name}")
+
+    except Exception as e:
+        print(f'Failed to reply to thread in bug-report: "{thread.name}": {e}')
+
 # Constants
 SENDING_CHANNEL = 1107624079210582016
 REACT_CHANNELS = [1059899526992904212] # Just in case if you want to use multiple or whatever
@@ -211,7 +238,7 @@ async def on_raw_reaction_add(payload):
     if not payload.emoji.name == STAR_EMOJI:
         return
     channel = client.get_channel(payload.channel_id)
-    message : discord.Message = await channel.fetch_message(payload.message_id)
+    message : nextcord.Message = await channel.fetch_message(payload.message_id)
 
     if message.author in BLACKLIST:
         return
@@ -233,7 +260,7 @@ async def on_raw_reaction_add(payload):
         return
     
 
-    ctx : discord.channel = client.get_channel(SENDING_CHANNEL)
+    ctx : nextcord.channel = client.get_channel(SENDING_CHANNEL)
     content = message.content
     attachments = []
     jmp = message.jump_url
