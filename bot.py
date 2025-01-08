@@ -183,19 +183,6 @@ async def on_message(message):
 
     await client.process_commands(message)
 
-# Background task to clear image counts every 1 minute
-@tasks.loop(seconds=60)
-async def clear_image_counts():
-    current_time = datetime.now()
-    for server_id, data in list(image_uploads.items()):
-        last_timestamp = data["timestamp"]
-        if current_time - last_timestamp >= timedelta(seconds=60):
-            del image_uploads[server_id]
-
-@clear_image_counts.before_loop
-async def before_clear_image_counts():
-    await client.wait_until_ready()
-
 # Forum channel ID where the bot should reply
 TARGET_FORUM_CHANNEL_ID = 1283902220630491178
 
@@ -222,6 +209,19 @@ async def on_thread_create(thread: nextcord.Thread):
 
     except Exception as e:
         print(f'Failed to reply to thread in bug-report: "{thread.name}": {e}')
+
+# Background task to clear image counts every 1 minute
+@tasks.loop(seconds=60)
+async def clear_image_counts():
+    current_time = datetime.now()
+    for server_id, data in list(image_uploads.items()):
+        last_timestamp = data["timestamp"]
+        if current_time - last_timestamp >= timedelta(seconds=60):
+            del image_uploads[server_id]
+
+@clear_image_counts.before_loop
+async def before_clear_image_counts():
+    await client.wait_until_ready()
 
 # Constants
 SENDING_CHANNEL = 1107624079210582016
