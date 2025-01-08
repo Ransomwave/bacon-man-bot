@@ -199,7 +199,7 @@ async def on_thread_create(thread: nextcord.Thread):
         # Send a custom reply message to the thread author
         author_mention = thread.owner.mention if thread.owner else "Unknown"
         await thread.send(
-            f"### Hi @howhowhowhow, thanks for reaching out! We appreciate you took time to report a bug.\n"
+            f"### Hi {author_mention}, thanks for reaching out! We appreciate you took time to report a bug in one of my games.\n"
             f"* Do not ping the dev! Keep in mind @ransomwavee might need up to 1 day to respond.\n"
             f"* **In the meantime, feel free to review the guidelines and provide any additional details that could help us resolve the issue. (Photos, Videos, etc.)**\n"
             f"* Thank you for your patience & understanding!\n"
