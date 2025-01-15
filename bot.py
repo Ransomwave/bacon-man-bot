@@ -201,9 +201,10 @@ async def on_thread_create(thread: nextcord.Thread):
         await thread.send(
             f"### Hi {author_mention}, thanks for reaching out! I appreciate you took time to report a bug in one of my games.\n"
             f"* Do not ping the dev! Keep in mind <@777460173115097098> might need up to 1 day to respond.\n"
-            f"* **In the meantime, feel free to review the guidelines and provide any additional details that could help us resolve the issue. (Photos, Videos, etc.)**\n"
+            f"* Please be sure to **provide a screenshot of the Roblox Developer Console** if you haven't already. Bring it up by pressing F9 or typing `/console` in chat (if available).\n"
+            f"* In the meantime, review the guidelines and **provide any additional details that could help me resolve the issue.** (Photos, Videos, What you were doing before, etc.)\n"
             f"* Thank you for your patience & understanding!\n"
-            f"-# This message is an automated response."
+            f"-# This is an automated response, I am a bot."
         )
 
         print(f"Replied to thread in bug-report: {thread.name}")
