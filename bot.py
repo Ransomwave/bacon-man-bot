@@ -9,7 +9,7 @@ import re
 import platform
 import os
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
 
 
 #discord
@@ -60,13 +60,16 @@ async def ping(ctx):
 
 @client.slash_command(name="whoishosting", description="(DEV ONLY) Get the hostname of the machine running the bot.")
 async def whoishosting(ctx):
-    if ctx.author.id != OWNER_ID:
+    if ctx.user.id != OWNER_ID:
         await ctx.send("You are not authorized to execute this command.")
         return
     
+    uname = platform.uname()
     embed = nextcord.Embed(colour=nextcord.Colour.red())
-    embed.add_field(name="System Information", value=f"Release: **{platform.uname} {platform.release}**")
-    embed.add_field(name="Architecture", value=f"Host: **{platform.machine()}**")
+    embed.add_field(name="System Information", value=f"Release: **{uname.system} {uname.version}**")
+    embed.add_field(name="Architecture", value=f"Host: **{uname.machine}**")
+
+    await ctx.send(embed=embed)
 
 @client.slash_command(name="stats", description="Get a game's stats", guild_ids=[995400838136746154])
 async def stats(ctx, id: int = 8197423034):
@@ -289,4 +292,5 @@ async def on_raw_reaction_add(payload):
         await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
         await db.commit()
 
+# print(os.getenv("TOKEN"))
 client.run(os.getenv("TOKEN"))
