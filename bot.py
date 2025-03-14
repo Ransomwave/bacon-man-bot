@@ -263,6 +263,7 @@ async def on_raw_reaction_add(payload):
     async with aiosqlite.connect("starboard.db") as db:
         cursor = await db.execute("SELECT * FROM starboard WHERE message_id = ?", (payload.message_id, ))
         value = await cursor.fetchone()
+        print(f"Fetched value from database: {value}")
     if value:
         return
 
@@ -285,12 +286,13 @@ async def on_raw_reaction_add(payload):
             attachments.append(f)
     if message.attachments == [] and STRICT_MODE:
         return
-    msg = await ctx.send(f":star: {reaction.count}/{str(TRIGGER_COUNT)}\nby: {message.author.mention}\nin: {jmp}", files=attachments)
+    msg = await ctx.send(f":star: {reaction.count}/{str(TRIGGER_COUNT)}\nby: {message.author.name}\nin: {jmp}", files=attachments)
 
     # Insert the thing into the database
     async with aiosqlite.connect("starboard.db") as db:
         await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
         await db.commit()
+        print(f"Inserted into database: message_id={message.id}, starboard_message_id={msg.id}")
 
 # print(os.getenv("TOKEN"))
 client.run(os.getenv("TOKEN"))
