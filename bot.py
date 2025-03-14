@@ -6,6 +6,7 @@ from datetime import datetime, timedelta  # Import the datetime module
 import asyncio, aiosqlite
 import re
 
+import platform
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -19,6 +20,9 @@ url = "https://www.roblox.com/games/8197423034/get-a-drink-at-3-am-beta"
 response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 ##
+
+## constants
+OWNER_ID=777460173115097098
 
 # Initializes the starboard SQLite table (obviously)
 async def _create_starboard_table(): 
@@ -36,7 +40,7 @@ async def _create_starboard_table():
 @client.event
 async def on_command_error(ctx, exp : Exception): 
     if exp == commands.MissingPermissions:
-        await ctx.send("Error: Missig permissions.")
+        await ctx.send("Error: Missing permissions.")
     else:
         raise exp
 
@@ -53,6 +57,16 @@ async def ping(ctx):
     embed = nextcord.Embed(colour=nextcord.Colour.red())
     embed.add_field(name="Client Latency", value=f"Ping value: **{latency}ms**")
     await ctx.send(embed=embed)
+
+@client.slash_command(name="whoishosting", description="(DEV ONLY) Get the hostname of the machine running the bot.")
+async def whoishosting(ctx):
+    if ctx.author.id != OWNER_ID:
+        await ctx.send("You are not authorized to execute this command.")
+        return
+    
+    embed = nextcord.Embed(colour=nextcord.Colour.red())
+    embed.add_field(name="System Information", value=f"Release: **{platform.uname} {platform.release}**")
+    embed.add_field(name="Architecture", value=f"Host: **{platform.machine()}**")
 
 @client.slash_command(name="stats", description="Get a game's stats", guild_ids=[995400838136746154])
 async def stats(ctx, id: int = 8197423034):
