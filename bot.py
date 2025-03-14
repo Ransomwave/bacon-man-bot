@@ -6,6 +6,10 @@ from datetime import datetime, timedelta  # Import the datetime module
 import asyncio, aiosqlite
 import re
 
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 
 #discord
 client : commands.Bot = commands.Bot(command_prefix = '!', intents = nextcord.Intents.all())
@@ -19,7 +23,7 @@ soup = BeautifulSoup(response.text, 'html.parser')
 # Initializes the starboard SQLite table (obviously)
 async def _create_starboard_table(): 
     async with aiosqlite.connect("starboard.db") as db:
-        # Create the primary starboard SQL table, if they don't exist
+        # Create the primary starboard SQL table, if it doesn't exist
         print("Initializing starboard database")
         await db.execute('''CREATE TABLE IF NOT EXISTS starboard (
         message_id INTEGER PRIMARY KEY,
@@ -32,7 +36,7 @@ async def _create_starboard_table():
 @client.event
 async def on_command_error(ctx, exp : Exception): 
     if exp == commands.MissingPermissions:
-        await ctx.send("Access denied.")
+        await ctx.send("Error: Missig permissions.")
     else:
         raise exp
 
@@ -49,15 +53,6 @@ async def ping(ctx):
     embed = nextcord.Embed(colour=nextcord.Colour.red())
     embed.add_field(name="Client Latency", value=f"Ping value: **{latency}ms**")
     await ctx.send(embed=embed)
-
-# @client.slash_command(name="currentplr", description="Get gada3's current playercount")
-# async def currentplr(ctx):
-#     response = requests.get(url)
-#     soup = BeautifulSoup(response.text, 'html.parser')
-
-#     active_players = soup.select_one('li.game-stat.game-stat-width p.text-lead.font-caption-body')
-
-#     await ctx.send(f"current player count: {active_players.text}")
 
 @client.slash_command(name="stats", description="Get a game's stats", guild_ids=[995400838136746154])
 async def stats(ctx, id: int = 8197423034):
@@ -98,6 +93,7 @@ async def stats(ctx, id: int = 8197423034):
     embed.add_field(name="Visit Count:", value=visits, inline=True)
     embed.add_field(name="Favorite Count:", value=favourites, inline=False)
     embed.add_field(name="Universe ID:", value=universeID, inline=False)
+
     await ctx.send(embed=embed)
 
 @client.slash_command(description="Show available commands and their usage")
@@ -176,7 +172,7 @@ async def on_message(message):
                 # Check if the server has exceeded the image limit
                 if image_uploads[server_id]["count"] > IMAGE_LIMIT:
                     await message.delete()
-                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} images/{COOLDOWN_DURATION} seconds). Try again later or, if someone's spamming, ping the staff team!.")
+                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} attachments/{COOLDOWN_DURATION} seconds). Try again later or, if someone is spamming, ping the staff team!")
                     await asyncio.sleep(4)
                     await warning_message.delete()
                     return
@@ -200,10 +196,10 @@ async def on_thread_create(thread: nextcord.Thread):
         author_mention = thread.owner.mention if thread.owner else "Unknown"
         await thread.send(
             f"### Hi {author_mention}, thanks for reaching out! I appreciate you took time to report a bug in one of my games.\n"
-            f"* Do not ping the dev! Keep in mind <@777460173115097098> might need up to 1 day to respond.\n"
-            f"* Please be sure to **provide a screenshot of the Roblox Developer Console** if you haven't already. Bring it up by pressing F9 or typing `/console` in chat (if available).\n"
-            f"* In the meantime, review the guidelines and **provide any additional details that could help me resolve the issue.** (Photos, Videos, What you were doing before, etc.)\n"
-            f"* Thank you for your patience & understanding!\n"
+            f"* Don't ping the dev! Keep in mind <@777460173115097098> might need up to 1 day to respond.\n"
+            f"* Make sure to **provide a screenshot of the Roblox Developer Console** if you haven't already. Bring it up by pressing F9 or typing `/console` in chat (if available).\n"
+            f"* Review the guidelines and **provide any additional details that could help me resolve the issue.** (Photos, Videos, What you were doing before, etc.)\n"
+            f"Thank you for your patience & understanding!\n"
             f"-# This is an automated response, I am a bot."
         )
 
@@ -279,7 +275,4 @@ async def on_raw_reaction_add(payload):
         await db.execute("INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)", (message.id, msg.id))
         await db.commit()
 
-file = open("token.txt", "r")
-token = file.read()
-client.run(token)
-file.close()
+client.run(os.getenv("TOKEN"))
