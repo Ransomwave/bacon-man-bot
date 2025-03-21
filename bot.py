@@ -24,6 +24,34 @@ soup = BeautifulSoup(response.text, 'html.parser')
 ## constants
 OWNER_ID=777460173115097098
 
+# Constants for the forum channels
+# Forum channel ID where the bot should reply
+BUG_REPORT_CHANNEL = 1283902220630491178
+
+TAGS = {
+    "Open" : 1283903449897111674,
+    "Fixed" : 1283903640989470750,
+    "AlreadyFixed" : 1325897239905964083,
+    "NotBug" : 1283903556927361075,
+}
+
+async def apply_tag_to_thread(thread, tag_id):
+    # Fetch the forum channel that owns this thread
+    forum_channel = thread.parent
+
+    # Find the tag by its ID
+    tagToApply = nextcord.utils.get(forum_channel.available_tags, id=tag_id)
+
+    if tagToApply is None:
+        print(f"Tag with ID {tag_id} not found by nextcord.")
+    else:
+        applied_tags = thread.applied_tags
+        applied_tags.append(tagToApply)  # Append the tag object, not an integer
+        print(f"Applied tags: {applied_tags}")
+
+        # Apply the updated tags to the thread
+        await thread.edit(applied_tags=applied_tags)
+
 # Initializes the starboard SQLite table (obviously)
 async def _create_starboard_table(): 
     async with aiosqlite.connect("starboard.db") as db:
@@ -59,9 +87,9 @@ async def ping(ctx):
     await ctx.send(embed=embed)
 
 @client.slash_command(name="whoishosting", description="(DEV ONLY) Get the hostname of the machine running the bot.")
-async def whoishosting(ctx):
-    if ctx.user.id != OWNER_ID:
-        await ctx.send("You are not authorized to execute this command.")
+async def whoishosting(interaction: nextcord.Interaction):
+    if interaction.user.id != OWNER_ID:
+        await interaction.response.send_message("You are not authorized to execute this command.",ephemeral=True)
         return
     
     uname = platform.uname()
@@ -69,10 +97,10 @@ async def whoishosting(ctx):
     embed.add_field(name="System Information", value=f"Release: **{uname.system} {uname.version}**")
     embed.add_field(name="Architecture", value=f"Host: **{uname.machine}**")
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed,ephemeral=True)
 
 @client.slash_command(name="stats", description="Get a game's stats", guild_ids=[995400838136746154])
-async def stats(ctx, id: int = 8197423034):
+async def stats(interaction: nextcord.Interaction, id: int = 8197423034):
     url = f"https://www.roblox.com/games/{id}"
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -111,7 +139,7 @@ async def stats(ctx, id: int = 8197423034):
     embed.add_field(name="Favorite Count:", value=favourites, inline=False)
     embed.add_field(name="Universe ID:", value=universeID, inline=False)
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 @client.slash_command(description="Show available commands and their usage")
 async def help(ctx):
@@ -142,7 +170,7 @@ image_uploads = {}
 # Whitelisted user IDs (add any user IDs you want to whitelist)
 whitelisted_users = [777460173115097098]
 @client.event
-async def on_message(message):
+async def on_message(message: nextcord.Message):
     if message.author.bot:
         return
 
@@ -189,20 +217,17 @@ async def on_message(message):
                 # Check if the server has exceeded the image limit
                 if image_uploads[server_id]["count"] > IMAGE_LIMIT:
                     await message.delete()
-                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} attachments/{COOLDOWN_DURATION} seconds). Try again later or, if someone is spamming, ping the staff team!")
-                    await asyncio.sleep(4)
-                    await warning_message.delete()
+                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} attachments/{COOLDOWN_DURATION} seconds). Try again later or, if someone is spamming, ping the staff team!", delete_after=5)
+                    # await asyncio.sleep(4)
+                    # await warning_message.delete()
                     return
 
     await client.process_commands(message)
 
-# Forum channel ID where the bot should reply
-TARGET_FORUM_CHANNEL_ID = 1283902220630491178
-
 @client.event
 async def on_thread_create(thread: nextcord.Thread):
     # Check if the thread belongs to the target forum channel
-    if thread.parent_id != TARGET_FORUM_CHANNEL_ID:
+    if thread.parent_id != BUG_REPORT_CHANNEL:
         return
 
     try:
@@ -219,6 +244,10 @@ async def on_thread_create(thread: nextcord.Thread):
             f"Thank you for your patience & understanding!\n"
             f"-# This is an automated response, I am a bot."
         )
+
+        apply_tag_to_thread(thread, TAGS["Open"])
+
+        print(f"Replied to thread in bug-report: {thread.name}")
 
     except Exception as e:
         print(f'Failed to reply to thread in bug-report: "{thread.name}": {e}')
