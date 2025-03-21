@@ -74,7 +74,7 @@ async def on_command_error(ctx, exp : Exception):
 
 @client.event
 async def on_ready():
-    activity = nextcord.Activity(type=nextcord.ActivityType.playing, name="get a drink at 3 am!")
+    activity = nextcord.Activity(type=nextcord.ActivityType.watching, name="Ransomwave's Games")
     await client.change_presence(status=nextcord.Status.online, activity=activity)
     await _create_starboard_table()
     print('=============== RUNNING ===============')
