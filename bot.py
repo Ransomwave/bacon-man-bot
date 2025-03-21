@@ -106,7 +106,7 @@ async def stats(ctx, id: int = 8197423034):
     embed = nextcord.Embed(title="Game Stats:", description=f"{game_name} ({id})", color=0xff4747)
     embed.set_thumbnail(url=icon)
     embed.add_field(name="Creator:", value=creator, inline=False)
-    embed.add_field(name="Current Player Count:", value=playing, inline=True)
+    embed.add_field(name="Concurrent Players:", value=playing, inline=True)
     embed.add_field(name="Visit Count:", value=visits, inline=True)
     embed.add_field(name="Favorite Count:", value=favourites, inline=False)
     embed.add_field(name="Universe ID:", value=universeID, inline=False)
@@ -163,7 +163,7 @@ async def on_message(message):
             await client.process_commands(message)
             return
 
-        if message.attachments or re.search(r'(https?://(?:www\.)?tenor\.com/.+|https?://\S+\.gif)', message.content):
+        if message.attachments or re.search(r'(https?://(?:www\.)?tenor\.com/.+|https?://\S+\.(gif|jpg|jpeg|png|webp))', message.content):
 
             server_id = message.guild.id
 
@@ -220,8 +220,6 @@ async def on_thread_create(thread: nextcord.Thread):
             f"-# This is an automated response, I am a bot."
         )
 
-        print(f"Replied to thread in bug-report: {thread.name}")
-
     except Exception as e:
         print(f'Failed to reply to thread in bug-report: "{thread.name}": {e}')
 
@@ -240,7 +238,7 @@ async def before_clear_image_counts():
 
 # Constants
 SENDING_CHANNEL = 1107624079210582016
-REACT_CHANNELS = [1059899526992904212] # Just in case if you want to use multiple or whatever
+REACT_CHANNELS = [1059899526992904212] 
 STAR_EMOJI = "⭐"
 TRIGGER_COUNT = 5
 STRICT_MODE = True # Toggle strict mode. If it's on, anyone without attachments will be discarded.
