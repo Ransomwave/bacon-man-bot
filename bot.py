@@ -191,7 +191,7 @@ async def on_message(message: nextcord.Message):
             await client.process_commands(message)
             return
 
-        if message.attachments or re.search(r'(https?://(?:www\.)?tenor\.com/.+|https?://\S+\.(gif|jpg|jpeg|png|webp))', message.content):
+        if message.attachments or re.search(r'(https?://(?:www\.)?tenor\.com/.+|https?://(?:www\.)?giphy\.com/.+|https?://\S+\.(gif|gifv|jpg|jpeg|png|apng|webp|mp4|mp3|wav|ogg|txt))', message.content):
 
             server_id = message.guild.id
 
