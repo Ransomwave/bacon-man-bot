@@ -13,7 +13,7 @@ load_dotenv(override=True)
 
 
 #discord
-client : commands.Bot = commands.Bot(command_prefix = '!', intents = nextcord.Intents.all())
+client : commands.Bot = commands.Bot(command_prefix = 'b!', intents = nextcord.Intents.all())
 
 ##
 url = "https://www.roblox.com/games/8197423034/get-a-drink-at-3-am-beta"
