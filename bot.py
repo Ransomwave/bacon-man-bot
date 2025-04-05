@@ -162,8 +162,8 @@ async def help(ctx):
     await ctx.send(embed=embed)
 
 
-# Define the global image limit and cooldown duration
-IMAGE_LIMIT = 15
+# Define the global attachment limit and cooldown duration
+IMAGE_LIMIT = 10
 COOLDOWN_DURATION = 60  # 60 seconds
 # Dictionary to track image uploads per server
 image_uploads = {}
@@ -185,13 +185,13 @@ async def on_message(message: nextcord.Message):
             print(f"An error occurred: {e}")
     else:
         # Check if the message is in any of the whitelisted channels by their IDs
-        # The channels are: media, suggestions, bug-report, fan-art, other-art, arg-discussion
-        whitelisted_channels = [995400838849769509, 995400838849769505, 995422771628757022, 1059899526992904212, 1076248681386352760, 1074713502205358121, 1143688301841231882]
+        # The channels are: media, fan-art, other-art, your-creations
+        whitelisted_channels = [995400838849769509, 1059899526992904212, 1076248681386352760, 1074713502205358121]
         if message.channel.id in whitelisted_channels:
             await client.process_commands(message)
             return
 
-        if message.attachments or re.search(r'(https?://(?:www\.)?tenor\.com/.+|https?://(?:www\.)?giphy\.com/.+|https?://\S+\.(gif|gifv|jpg|jpeg|png|apng|webp|mp4|mp3|wav|ogg|txt))', message.content):
+        if message.attachments or re.search(r'(https?://(?:www\.)?tenor\.com/.+|https?://(?:www\.)?giphy\.com/.+|https?://(?:www\.)?youtube\.com/.+|https?://\S+\.(gif|gifv|jpg|jpeg|png|apng|webp|mp4|mp3|wav|ogg|txt))', message.content):
 
             server_id = message.guild.id
 
@@ -217,7 +217,7 @@ async def on_message(message: nextcord.Message):
                 # Check if the server has exceeded the image limit
                 if image_uploads[server_id]["count"] > IMAGE_LIMIT:
                     await message.delete()
-                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} attachments/{COOLDOWN_DURATION} seconds). Try again later or, if someone is spamming, ping the staff team!", delete_after=5)
+                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} attachments/{COOLDOWN_DURATION} seconds). Try again later or!\n-# If someone is spamming, ping the staff team!", delete_after=5)
                     # await asyncio.sleep(4)
                     # await warning_message.delete()
                     return
