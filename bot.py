@@ -245,7 +245,7 @@ async def on_thread_create(thread: nextcord.Thread):
             f"-# This is an automated response, I am a bot."
         )
 
-        apply_tag_to_thread(thread, TAGS["Open"])
+        await apply_tag_to_thread(thread, TAGS["Open"])
 
         print(f"Replied to thread in bug-report: {thread.name}")
 
