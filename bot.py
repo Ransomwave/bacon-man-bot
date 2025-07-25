@@ -22,7 +22,7 @@ soup = BeautifulSoup(response.text, 'html.parser')
 ##
 
 ## constants
-OWNER_ID=777460173115097098
+OWNER_ID = 777460173115097098
 
 # Constants for the forum channels
 # Forum channel ID where the bot should reply
@@ -33,6 +33,8 @@ TAGS = {
     "Fixed" : 1283903640989470750,
     "AlreadyFixed" : 1325897239905964083,
     "NotBug" : 1283903556927361075,
+    "Closed" : 1360315066653737080,
+    "Duplicate" : 1360314448614523082,
 }
 
 async def apply_tag_to_thread(thread, tag_id):
@@ -46,11 +48,34 @@ async def apply_tag_to_thread(thread, tag_id):
         print(f"Tag with ID {tag_id} not found by nextcord.")
     else:
         applied_tags = thread.applied_tags
-        applied_tags.append(tagToApply)  # Append the tag object, not an integer
+        applied_tags.insert(0, tagToApply)  # Insert the tag object at the beginning of the list
         print(f"Applied tags: {applied_tags}")
 
         # Apply the updated tags to the thread
         await thread.edit(applied_tags=applied_tags)
+
+async def remove_tag_from_thread(thread, tag_id):
+    # Fetch the forum channel that owns this thread
+    forum_channel = thread.parent
+
+    # Find the tag by its ID
+    tagToRemove = nextcord.utils.get(forum_channel.available_tags, id=tag_id)
+
+    if tagToRemove is None:
+        print(f"Tag with ID {tag_id} not found by nextcord.")
+    else:
+        applied_tags = thread.applied_tags.copy()  # Create a copy to avoid modifying the original
+        
+        # Remove the tag if it exists in the applied tags
+        if tagToRemove in applied_tags:
+            applied_tags.remove(tagToRemove)
+            print(f"Removed tag: {tagToRemove.name}")
+            print(f"Applied tags after removal: {applied_tags}")
+
+            # Apply the updated tags to the thread
+            await thread.edit(applied_tags=applied_tags)
+        else:
+            print(f"Tag {tagToRemove.name} was not applied to the thread, nothing to remove.")
 
 # Initializes the starboard SQLite table (obviously)
 async def _create_starboard_table(): 
@@ -78,6 +103,31 @@ async def on_ready():
     await client.change_presence(status=nextcord.Status.online, activity=activity)
     await _create_starboard_table()
     print('=============== RUNNING ===============')
+
+@client.slash_command(description="Show available commands and their usage")
+async def help(ctx):
+    embed = nextcord.Embed(title="Command List", color=0xff4747)
+    
+    # Ping Command
+    ping_description = "Get the bot's latency."
+    ping_usage = "/ping"
+    embed.add_field(name="/ping", value=f"Description: {ping_description}\nUsage: `{ping_usage}`", inline=False)
+    
+    # Stats Command
+    stats_description = "Get a game's stats."
+    stats_usage = "/stats [id (leave blank for gada3 stats)]"
+    embed.add_field(name="/stats", value=f"Description: {stats_description}\nUsage: `{stats_usage}`", inline=False)
+
+    # Close command
+    close_description = "Close a bug report thread."
+    close_usage = "/close"
+    embed.add_field(name="/close", value=f"Description: {close_description}\nUsage: `{close_usage}`", inline=False)
+
+    embed.add_field(name="Client Events", value="This bot has a few Client Events\n- Add vote reactions to all messages in a channel.\n- Limit media every 60 seconds to prevent attachment spam.\n- Starboard functionality in art channels\nMore Roblox-related functionality will be added in the future!", inline=False)
+
+    embed.set_footer(text="Made with ❤️ by Ransomwave")
+    
+    await ctx.send(embed=embed)
 
 @client.slash_command(name="ping", description="Get the bot's latency.")
 async def ping(ctx):
@@ -141,25 +191,62 @@ async def stats(interaction: nextcord.Interaction, id: int = 8197423034):
 
     await interaction.response.send_message(embed=embed)
 
-@client.slash_command(description="Show available commands and their usage")
-async def help(ctx):
-    embed = nextcord.Embed(title="Command List", color=0xff4747)
-    
-    # Ping Command
-    ping_description = "Get the bot's latency."
-    ping_usage = "/ping"
-    embed.add_field(name="/ping", value=f"Description: {ping_description}\nUsage: `{ping_usage}`", inline=False)
-    
-    # Stats Command
-    stats_description = "Get a game's stats."
-    stats_usage = "/stats [id (leave blank for gada3 stats)]"
-    embed.add_field(name="/stats", value=f"Description: {stats_description}\nUsage: `{stats_usage}`", inline=False)
+@client.slash_command(name="close", description="Close a bug report thread with a specified reason", guild_ids=[995400838136746154])
+async def close(interaction: nextcord.Interaction, reason: str = nextcord.SlashOption(
+    name="reason",
+    description="Reason for closing the thread",
+    choices=["Fixed", "AlreadyFixed", "NotBug", "Closed", "Duplicate"],
+),
 
-    embed.add_field(name="Client Events", value="This bot has a few Client Events\n- Add vote reactions to all messages in a channel.\n- Limit media every 60 seconds to prevent attachment spam.\n- Starboard functionality in art channels\nMore Roblox-related functionality will be added in the future!", inline=False)
+    lockedBool: bool = nextcord.SlashOption(
+    name="locked",
+    description="Whether to lock the thread after closing it",
+    default=False,
+    required=False
+    )):
+    # Check if the command is being used in a thread
+    if not isinstance(interaction.channel, nextcord.Thread):
+        await interaction.response.send_message("This command can only be used in a thread.", ephemeral=True)
+        return
 
-    embed.set_footer(text="Made with ❤️ by Ransomwave")
-    
-    await ctx.send(embed=embed)
+    thread = interaction.channel
+
+    # Check if the thread is in the bug report forum
+    if thread.parent_id != BUG_REPORT_CHANNEL:
+        await interaction.response.send_message("This command can only be used in bug report threads.", ephemeral=True)
+        return
+
+    # Check if the user has permission to close threads
+    if interaction.user.id != OWNER_ID and not any(role.permissions.manage_threads for role in interaction.user.roles):
+        await interaction.response.send_message("You don't have permission to close this thread.", ephemeral=True)
+        return
+
+    try:
+        # Remove the "Open" tag if it exists
+        await remove_tag_from_thread(thread, TAGS["Open"])
+        
+        # Apply the closure reason tag
+        await apply_tag_to_thread(thread, TAGS[reason])
+        
+        # Send confirmation message
+        embed = nextcord.Embed(
+            title="Thread Closed",
+            description=f"This thread has been closed with reason: **{reason}**",
+            color=0xff4747
+        )
+        embed.set_footer(text=f"Closed by {interaction.user.display_name}")
+        embed.set_author(name=interaction.user.name, icon_url=interaction.user.display_avatar.url)
+        
+        await interaction.response.send_message(embed=embed)
+
+        # Close the thread
+        await thread.edit(archived=True, locked=lockedBool)
+
+        print(f"Thread '{thread.name}' closed by {interaction.user.name} with reason: {reason}")
+        
+    except Exception as e:
+        await interaction.response.send_message(f"An error occurred while closing the thread: {str(e)}", ephemeral=True)
+        print(f"Error closing thread '{thread.name}': {e}")
 
 
 # Define the global attachment limit and cooldown duration
