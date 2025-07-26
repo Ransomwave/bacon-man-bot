@@ -18,7 +18,7 @@ This bot was built for managing my own Discord, with features being made to brin
 - **/ping**: Get the bot's latency.
 - **/whoishosting**: Get the hostname of the machine running the bot (DEV ONLY).
 - **/stats [id]**: Get a game's stats. If no ID is provided, it defaults to the game "Get a Drink at 3 AM".
-- **/close <reason> [lock?]**: Closes a bug report thread on my server.
+- **/close \<reason\> [lock?]**: Closes a bug report thread on my server.
 - **/help**: Show available commands and their usage.
 
 ## Events
