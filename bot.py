@@ -416,7 +416,7 @@ async def on_member_join(member):
     
     general_channel = client.get_channel(995400838849769508)
 
-    await general_channel.send(f"{member.mention} just joined. Say hi to them!", delete_after=120)
+    await general_channel.send(f"{member.mention} just joined. Say hi to them!", delete_after=600)
 
 # print(os.getenv("TOKEN"))
 client.run(os.getenv("TOKEN"))
