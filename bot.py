@@ -408,5 +408,17 @@ async def on_raw_reaction_add(payload):
         await db.commit()
         print(f"Inserted into database: message_id={message.id}, starboard_message_id={msg.id}")
 
+
+@client.event
+async def on_member_join(member):
+    if member.guild.id != 995400838136746154:
+        return
+    
+    general_channel = client.get_channel(995400838849769508)
+
+    message = await general_channel.send(f"{member.mention} just joined. Say hi to them!")
+
+    message.delete(delay = 60)
+
 # print(os.getenv("TOKEN"))
 client.run(os.getenv("TOKEN"))
