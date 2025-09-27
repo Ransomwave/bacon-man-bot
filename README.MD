@@ -18,10 +18,12 @@ This bot was built for managing my own Discord, with features being made to brin
 - **/ping**: Get the bot's latency.
 - **/whoishosting**: Get the hostname of the machine running the bot (DEV ONLY).
 - **/stats [id]**: Get a game's stats. If no ID is provided, it defaults to the game "Get a Drink at 3 AM".
+- **/close \<reason\> [lock?]**: Closes a bug report thread on my server.
 - **/help**: Show available commands and their usage.
 
 ## Events
 
+- Sends a helpful message and adds a tag to every new post created on my server's bug-report channel.
 - **on_message**: Adds voting reactions to messages in specific channels and enforces attachment limits.
 - **on_thread_create**: Automatically replies to new threads in the bug report forum channel and applies tags.
 - **on_raw_reaction_add**: Handles starboard functionality by adding messages with a certain number of star reactions to a starboard channel.
