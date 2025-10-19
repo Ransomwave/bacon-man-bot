@@ -304,7 +304,7 @@ async def on_message(message: nextcord.Message):
                 # Check if the server has exceeded the image limit
                 if image_uploads[server_id]["count"] > IMAGE_LIMIT:
                     await message.delete()
-                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} attachments/{COOLDOWN_DURATION} seconds). Try again later or!\n-# If someone is spamming, ping the staff team!", delete_after=5)
+                    warning_message = await message.channel.send(f"Slow down, {message.author.mention}. The server has reached the attachment limit ({IMAGE_LIMIT} attachments/{COOLDOWN_DURATION} seconds). Try again later!\n-# Someone's spamming? Ping the staff team!", delete_after=5)
                     # await asyncio.sleep(4)
                     # await warning_message.delete()
                     return
