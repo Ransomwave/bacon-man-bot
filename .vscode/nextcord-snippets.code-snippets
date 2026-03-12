@@ -1,0 +1,41 @@
+{
+  "Nextcord Cog Command Template": {
+    "prefix": "!cmd",
+    "body": [
+      "import nextcord",
+      "from nextcord.ext.commands import Cog",
+      "",
+      "class ${1:CogName}(Cog):",
+      "    def __init__(self, bot):",
+      "        self.bot = bot",
+      "",
+      "    @nextcord.slash_command(name=\"${2:command_name}\", description=\"${3:Command description}\")",
+      "    async def ${2:command_name}(self, interaction: nextcord.Interaction):",
+      "        ${4:await interaction.response.send_message(\"Hello, world!\")}",
+      "",
+      "def setup(bot):",
+      "    bot.add_cog(${1:CogName}(bot))",
+    ],
+    "description": "A basic command template for cogs",
+  },
+
+  "Nextcord Cog Event Template": {
+    "prefix": "!event",
+    "body": [
+      "import nextcord",
+      "from nextcord.ext.commands import Cog",
+      "",
+      "class ${1:CogName}(Cog):",
+      "    def __init__(self, bot):",
+      "        self.bot = bot",
+      "",
+      "    @Cog.listener()",
+      "    async def ${2:on_event_name}(self, ${3:args}):",
+      "        ${4:# Event handling code here}",
+      "",
+      "def setup(bot):",
+      "    bot.add_cog(${1:CogName}(bot))",
+    ],
+    "description": "A basic event template for cogs",
+  },
+}

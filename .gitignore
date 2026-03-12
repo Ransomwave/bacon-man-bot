@@ -5,3 +5,10 @@ __pycache__
 token.txt
 virtualenv/
 *.db
+
+# Logs
+logs/
+*.log
+
+# Legacy bot files
+*_old_*

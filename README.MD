@@ -9,7 +9,7 @@ This bot was built for managing my own Discord, with features being made to brin
 - **Ping Command**: Get the bot's latency.
 - **Game Stats Command**: Retrieve stats for a specified Roblox game.
 - **Starboard Functionality**: Automatically add messages with a certain number of star reactions to a starboard channel.
-- **Attachment Limit Enforcement**: Limit the number of attachments a server can upload within a certain time frame.
+- **Attachment Limit Enforcement**: Limit the number of attachments server members can upload within a certain time frame. Useful for preventing situations where users might spam attachments.
 - **Bug Report Thread Handling**: Automatically reply to new threads in the bug report forum channel & manage tags (open, fixed, closed...).
 
 ## Commands
