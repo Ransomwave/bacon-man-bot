@@ -6,16 +6,12 @@ This bot was built for managing my own Discord, with features being made to brin
 
 ## Capabilities
 
-- **Ping Command**: Get the bot's latency.
-- **Game Stats Command**: Retrieve stats for a specified Roblox game.
-- **Starboard Functionality**: Automatically add messages with a certain number of star reactions to a starboard channel.
-- **Attachment Limit Enforcement**: Limit the number of attachments server members can upload within a certain time frame. Useful for preventing situations where users might spam attachments.
-- **Bug Report Thread Handling**: Automatically reply to new threads in the bug report forum channel & manage tags (open, fixed, closed...).
-
-## Commands
-
-- **/help**: Show available commands and their usage.
-- **/ping**: Get the bot's latency.
-- **/whoishosting**: Get the hostname of the machine running the bot (DEV ONLY).
-- **/stats [id]**: Get a game's stats. If no ID is provided, it defaults to the game "Get a Drink at 3 AM".
-- **/close \<reason\> [lock?]**: Closes a bug report thread on my server.
+- **Game Stats**: Retrieve stats for Roblox games using the `/stats` command.
+- **Starboard**: Automatically post messages that receive a certain number of star reactions to a designated starboard channel.
+  - **Blacklist**: Maintain a blacklist of users whose messages will not be considered for the starboard.
+  - **Strict Mode**: Optionally require messages to have attachments to be eligible for the starboard.
+- **Attachment Limit**: Enforce a limit on the number of attachments in messages.
+  - **Configurable Limit**: Set a custom attachment limit for messages.
+  - **Attachment Deletion**: Automatically delete attachments that exceed the specified limit.
+- **Bug Report Management**: Close bug report threads with a specified reason.
+- **Customizable Settings**: Configure various settings such as starboard channels, trigger counts, and more.
