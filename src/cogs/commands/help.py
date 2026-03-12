@@ -12,7 +12,7 @@ class HelpCommand(Cog):
         embed = nextcord.Embed(
             title="Help - List of Commands",
             description="Here are all the available commands:",
-            color=nextcord.Color.blue(),
+            color=0xFF4747,
         )
 
         # Pull registered application (slash) commands from the bot instance.
