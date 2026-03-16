@@ -8,7 +8,7 @@ import bot
 
 # Initializes the starboard SQLite table (obviously)
 async def create_starboard_table():
-    async with aiosqlite.connect("starboard.db") as db:
+    async with aiosqlite.connect("bot_data.db") as db:
         # Create the primary starboard SQL table, if it doesn't exist
         print("Initializing starboard database")
         await db.execute(
@@ -19,7 +19,7 @@ async def create_starboard_table():
         )
 
         await db.commit()
-        print("starboard.db initialized")
+        print("bot_data.db (starboard) initialized")
 
 
 class Starboard(Cog):
@@ -49,7 +49,7 @@ class Starboard(Cog):
 
         # check message id (check if this thing was already posted)
         value = None
-        async with aiosqlite.connect("starboard.db") as db:
+        async with aiosqlite.connect("bot_data.db") as db:
             cursor = await db.execute(
                 "SELECT * FROM starboard WHERE message_id = ?", (payload.message_id,)
             )
@@ -82,7 +82,7 @@ class Starboard(Cog):
         )
 
         # Insert the thing into the database
-        async with aiosqlite.connect("starboard.db") as db:
+        async with aiosqlite.connect("bot_data.db") as db:
             await db.execute(
                 "INSERT INTO starboard (message_id, starboard_message_id) VALUES (?, ?)",
                 (message.id, msg.id),

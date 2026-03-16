@@ -1,6 +1,7 @@
 import nextcord
 from nextcord.ext import commands
 
+from cogs.commands import reaction_roles
 from . import starboard
 
 
@@ -22,6 +23,7 @@ class OnReady(commands.Cog):
             status=nextcord.Status.online, activity=activity
         )
         await starboard.create_starboard_table()
+        await reaction_roles.create_reaction_roles_table()
 
 
 def setup(bot):

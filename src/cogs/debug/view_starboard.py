@@ -3,6 +3,7 @@ import nextcord
 from nextcord.ext.commands import Cog
 
 import config
+from utils import checks
 
 
 class ViewDatabaseCommand(Cog):
@@ -10,17 +11,14 @@ class ViewDatabaseCommand(Cog):
         self.bot = bot
 
     @nextcord.slash_command(
-        name="view_database", description="(DEV) View starboard database"
+        name="starboard_view", description="(DEV) View starboard database"
     )
-    async def view_database(self, interaction: nextcord.Interaction):
-        if interaction.user.id != config.DEV_ID:  # Replace with your Discord user ID
-            await interaction.response.send_message(
-                "You don't have permission to use this command.", ephemeral=True
-            )
+    async def starboard_view(self, interaction: nextcord.Interaction):
+        if not await checks.require_dev(interaction):
             return
 
         try:
-            async with aiosqlite.connect("starboard.db") as db:
+            async with aiosqlite.connect("bot_data.db") as db:
                 cursor = await db.execute("SELECT * FROM starboard")
                 rows = await cursor.fetchall()
                 await cursor.close()
