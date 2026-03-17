@@ -9,7 +9,13 @@ class PingCommand(Cog):
     @nextcord.slash_command(name="ping", description="Check the bot's latency")
     async def ping(self, interaction: nextcord.Interaction):
         latency = round(self.bot.latency * 1000)  # Convert to milliseconds
-        await interaction.response.send_message(f"Pong! Latency: {latency}ms")
+        embed = nextcord.Embed(
+            title="Pong!",
+            description=f"Latency: {latency}ms",
+            color=nextcord.Color.red(),
+        )
+
+        await interaction.response.send_message(embed=embed)
 
 
 def setup(bot):
