@@ -18,6 +18,7 @@ class AutoReload(Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
         self.last_reload = 0
+        self._baseline_initialized = False
 
         # Don't start the task if th AUTO_RELOAD variable is set to False
         if config.AUTO_RELOAD:
@@ -29,9 +30,15 @@ class AutoReload(Cog):
         # Wait until all the cogs are loaded
         await self.bot.wait_until_ready()
 
-        # Initialize the last reload time
-        if self.last_reload == 0:
+        # On first run, capture current cogs state so startup does not trigger reloads
+        if not self._baseline_initialized:
+            cogs = get_cogs()
+            self.bot.loaded_cogs = {
+                cog: os.path.getmtime(module_to_file(cog)) for cog in cogs
+            }
             self.last_reload = time.time()
+            self._baseline_initialized = True
+            return
 
         # Prevents the bot from reloading too often
         if time.time() - self.last_reload < 5:
@@ -51,7 +58,7 @@ class AutoReload(Cog):
                 and cog not in cogs_to_load | cogs_to_unload
             ):
                 cogs_to_reload.add(cog)
-                self.bot.loaded_cogs[file_path] = os.path.getmtime(file_path)
+                self.bot.loaded_cogs[cog] = os.path.getmtime(file_path)
 
         # Load, unload and reload the cogs
         if cogs_to_load or cogs_to_unload or cogs_to_reload:
