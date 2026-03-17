@@ -1,6 +1,11 @@
 import nextcord as _nextcord
 import traceback as _traceback
 import os as _os
+import config as _config
+
+
+_SRC_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_COGS_DIR = _os.path.join(_SRC_DIR, _config.COGS_DIR)
 
 
 async def success(
@@ -126,11 +131,15 @@ def file_to_module(root: str, filepath: str) -> str:
     :class:`str`
         The module path
     """
+    if _os.path.isabs(root):
+        root = _os.path.relpath(root, _SRC_DIR)
+
     return (
         _os.path.join(root, filepath)
         .removesuffix(".py")
         .replace("\\", ".")
         .replace("/", ".")
+        .strip(".")
     )
 
 
@@ -147,7 +156,7 @@ def module_to_file(filepath: str) -> str:
     :class:`str`
         The filepath
     """
-    return filepath.replace(".", _os.sep) + ".py"
+    return _os.path.join(_SRC_DIR, filepath.replace(".", _os.sep) + ".py")
 
 
 def get_cogs():
@@ -159,10 +168,14 @@ def get_cogs():
         The set of all the cogs
     """
     cogs = set()
-    for root, dirs, files in _os.walk("cogs"):
-        if not root.startswith("__"):
-            for file in files:
-                # if file.endswith(".py") and file not in _config.LOAD_EXCEPTIONS:
-                if file.endswith(".py"):
-                    cogs.add(file_to_module(root, file))
+    if not _os.path.isdir(_COGS_DIR):
+        return cogs
+
+    for root, dirs, files in _os.walk(_COGS_DIR):
+        dirs[:] = [directory for directory in dirs if directory != "__pycache__"]
+
+        for file in files:
+            # if file.endswith(".py") and file not in _config.LOAD_EXCEPTIONS:
+            if file.endswith(".py") and file != "__init__.py":
+                cogs.add(file_to_module(root, file))
     return cogs
