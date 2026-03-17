@@ -1,7 +1,6 @@
 import nextcord
 from nextcord.ext.commands import Cog
 
-import config
 from utils import checks
 from utils.truncate_str import truncate_to_discord_max_length
 
