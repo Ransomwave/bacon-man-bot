@@ -30,3 +30,5 @@ BUG_REPORT_TAGS = {
 
 # Reaction roles channel ID
 REACTION_ROLES_CHANNEL = 1481865040901443717
+
+BOT_DATA_FILE = "bot_data.db"
