@@ -1,8 +1,7 @@
 import nextcord
 from nextcord.ext.commands import Cog
 
-from utils import checks
-from utils.truncate_str import truncate_to_discord_max_length
+from utils import checks, truncate_str
 
 
 async def run_sql_command(command: str):
@@ -35,7 +34,7 @@ class DatabaseExecCommand(Cog):
         result = await run_sql_command(command)
         result_text = str(result)
         await interaction.edit_original_message(
-            content=f"Result:\n```sql\n{truncate_to_discord_max_length(result_text)}\n```"
+            content=f"Result:\n```sql\n{truncate_str.to_discord_max_length(result_text)}\n```"
         )
 
 
