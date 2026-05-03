@@ -53,67 +53,54 @@ class AttachmentLimit(Cog):
         if message.author.bot:
             return
 
-        # Check if the message is in #suggestions
-        if (
-            message.channel.id == 995400838849769505
-            or message.channel.id == 1237050991711359047
+        # Check if the message is in any of the whitelisted channels by their IDs
+        # The channels are: media, fan-art, other-art, your-creations
+        if message.channel.id in self.WHITELISTED_CHANNELS:
+            await client.process_commands(message)
+            return
+
+        if message.attachments or regex.search(
+            r"(https?:\/\/(?:[\w-]+\.)?(tenor|giphy|klipy|youtube)\.com\/\S+|https?:\/\/\S+\.(?:gif|gifv|jpe?g|png|apng|webp|mp4|mp3|wav|ogg|txt)(?:\?\S+)?)",
+            message.content,
         ):
-            # If it is, add voting reactions to the message
-            try:
-                # print("Vote reactions sent in proper channels.")
-                await message.add_reaction(self.YES_EMOJI)
-                await message.add_reaction(self.NO_EMOJI)
-            except Exception as e:
-                print(f"An error occurred: {e}")
-        else:
-            # Check if the message is in any of the whitelisted channels by their IDs
-            # The channels are: media, fan-art, other-art, your-creations
-            if message.channel.id in self.WHITELISTED_CHANNELS:
+
+            server_id = message.guild.id
+
+            # Check if the user is whitelisted (their messages won't be deleted)
+            if message.author.id in self.WHITELISTED_USERS:
                 await client.process_commands(message)
                 return
 
-            if message.attachments or regex.search(
-                r"(https?:\/\/(?:[\w-]+\.)?(tenor|giphy|klipy|youtube)\.com\/\S+|https?:\/\/\S+\.(?:gif|gifv|jpe?g|png|apng|webp|mp4|mp3|wav|ogg|txt)(?:\?\S+)?)",
-                message.content,
-            ):
+            # Initialize or update the image count for the server
+            if server_id not in self.image_uploads:
+                self.image_uploads[server_id] = {
+                    "count": 1,
+                    "timestamp": datetime.now(),
+                }
+            else:
+                current_time = datetime.now()
+                last_timestamp = self.image_uploads[server_id]["timestamp"]
 
-                server_id = message.guild.id
-
-                # Check if the user is whitelisted (their messages won't be deleted)
-                if message.author.id in self.WHITELISTED_USERS:
-                    await client.process_commands(message)
-                    return
-
-                # Initialize or update the image count for the server
-                if server_id not in self.image_uploads:
+                # Check if the cooldown has passed
+                if current_time - last_timestamp >= timedelta(
+                    seconds=self.COOLDOWN_DURATION
+                ):
                     self.image_uploads[server_id] = {
                         "count": 1,
-                        "timestamp": datetime.now(),
+                        "timestamp": current_time,
                     }
                 else:
-                    current_time = datetime.now()
-                    last_timestamp = self.image_uploads[server_id]["timestamp"]
+                    self.image_uploads[server_id]["count"] += 1
+                    self.image_uploads[server_id]["timestamp"] = current_time
 
-                    # Check if the cooldown has passed
-                    if current_time - last_timestamp >= timedelta(
-                        seconds=self.COOLDOWN_DURATION
-                    ):
-                        self.image_uploads[server_id] = {
-                            "count": 1,
-                            "timestamp": current_time,
-                        }
-                    else:
-                        self.image_uploads[server_id]["count"] += 1
-                        self.image_uploads[server_id]["timestamp"] = current_time
-
-                    # Check if the server has exceeded the image limit
-                    if self.image_uploads[server_id]["count"] > self.IMAGE_LIMIT:
-                        await message.delete()
-                        await message.channel.send(
-                            f"Slow down, {message.author.mention}. The server has reached the attachment limit ({self.IMAGE_LIMIT} attachments/{self.COOLDOWN_DURATION} seconds). Try again later!\n-# Someone's spamming? Ping the staff team!",
-                            delete_after=5,
-                        )
-                        return
+                # Check if the server has exceeded the image limit
+                if self.image_uploads[server_id]["count"] > self.IMAGE_LIMIT:
+                    await message.delete()
+                    await message.channel.send(
+                        f"Slow down, {message.author.mention}. The server has reached the attachment limit ({self.IMAGE_LIMIT} attachments/{self.COOLDOWN_DURATION} seconds). Try again later!\n-# Someone's spamming? Ping the staff team!",
+                        delete_after=5,
+                    )
+                    return
 
         await client.process_commands(message)
 
