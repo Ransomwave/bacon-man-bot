@@ -1,3 +1,5 @@
+# Allows users to register channels for automatic reactions with specified emojis. Reactions will be added to every message sent in the registered channels.
+
 import asyncio
 import logging
 import os
@@ -21,7 +23,6 @@ async def setup_db_table():
             "emojis": "TEXT",
         },
     )
-    logger.info("Ensured autoreacts table exists in database.")
 
 
 class Autoreact(Cog):

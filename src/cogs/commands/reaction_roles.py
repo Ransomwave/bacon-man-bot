@@ -58,7 +58,6 @@ async def setup_db_table():
             "FOREIGN KEY (message_id)": "REFERENCES reaction_role_messages (message_id) ON DELETE CASCADE",
         },
     )
-    print("bot_data.db (reaction roles) initialized")
 
 
 async def add_reactions_to_message(message: nextcord.Message, emojis: list[str]):
