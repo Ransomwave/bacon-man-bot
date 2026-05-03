@@ -1,7 +1,7 @@
 import nextcord
 from nextcord.ext import commands
 
-from cogs.commands import autoreact, reaction_roles
+from cogs.commands import autoreact, mediachannel, reaction_roles
 from . import starboard
 
 
@@ -25,6 +25,7 @@ class OnReady(commands.Cog):
         await starboard.setup_db_table()
         await reaction_roles.setup_db_table()
         await autoreact.setup_db_table()
+        await mediachannel.setup_db_table()
 
 
 def setup(bot):

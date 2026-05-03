@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import re
 
 import aiosqlite
 import nextcord
@@ -54,8 +55,20 @@ class Autoreact(Cog):
                     # 0.1
                     # )  # Add a short delay to avoid hitting rate limits
                 except Exception as e:
-                    logger.exception(
-                        f"Failed to add reaction '{emoji}' to message {message.id} in channel {message.channel.id}: {e}"
+
+                    cursor2 = await db.execute(
+                        "SELECT channel_id FROM media_channels WHERE channel_id = ?",
+                        (message.channel.id,),
+                    )
+                    row2 = await cursor2.fetchone()
+                    if row2:
+                        logger.debug(
+                            f"Failed to add reaction '{emoji}' to message {message.id} in media channel {message.channel.name} ({message.channel.id}), but ignoring error since it's a media channel: {e}"
+                        )
+                        return  # Don't log errors for media channels since the bot will delete non-media messages, which can cause reaction failures
+
+                    logger.error(
+                        f"Failed to add reaction '{emoji}' to message {message.id} in channel {message.channel.name} ({message.channel.id}): {e}"
                     )
 
     @nextcord.slash_command(

@@ -59,35 +59,41 @@ class MediaChannel(Cog):
 
     @nextcord.slash_command(
         name="mediachannel_add",
-        description="Register a channelas 'media only', where only messages containing media attachments are allowed. Non-media messages will be automatically deleted.",
+        description="Mark this channel as media-only (non-media messages auto-deleted).",
     )
-    async def mediachannel_add(self, interaction: nextcord.Interaction):
+    async def mediachannel_add(
+        self, interaction: nextcord.Interaction, channel: nextcord.TextChannel = None
+    ):
+        channel = channel or interaction.channel
         async with aiosqlite.connect(db_utils.config.BOT_DATA_FILE) as db:
             await db.execute(
                 "INSERT OR IGNORE INTO media_channels (channel_id) VALUES (?)",
-                (interaction.channel_id,),
+                (channel.id,),
             )
             await db.commit()
 
         await interaction.response.send_message(
-            f"Channel <#{interaction.channel_id}> has been registered as a media channel.",
+            f"Channel <#{channel.id}> has been registered as a media channel.",
             ephemeral=True,
         ),
 
     @nextcord.slash_command(
         name="mediachannel_remove",
-        description="Unregister a channel as 'media only'. Messages without media attachments will no longer be deleted.",
+        description="Unmark this channel as media-only.",
     )
-    async def mediachannel_remove(self, interaction: nextcord.Interaction):
+    async def mediachannel_remove(
+        self, interaction: nextcord.Interaction, channel: nextcord.TextChannel = None
+    ):
+        channel = channel or interaction.channel
         async with aiosqlite.connect(db_utils.config.BOT_DATA_FILE) as db:
             await db.execute(
                 "DELETE FROM media_channels WHERE channel_id = ?",
-                (interaction.channel_id,),
+                (channel.id,),
             )
             await db.commit()
 
         await interaction.response.send_message(
-            f"Channel <#{interaction.channel_id}> has been unregistered as a media channel.",
+            f"Channel <#{channel.id}> has been unregistered as a media channel.",
             ephemeral=True,
         )
 
@@ -100,15 +106,18 @@ class MediaChannel(Cog):
             cursor = await db.execute("SELECT channel_id FROM media_channels")
             rows = await cursor.fetchall()
 
+        await interaction.response.defer(ephemeral=True)
+
         if not rows:
-            await interaction.response.send_message(
-                "No media channels registered.", ephemeral=True
+            await interaction.edit_original_message(
+                content="No media channels registered.", ephemeral=True
             )
             return
 
         channel_mentions = [f"<#{row[0]}>" for row in rows]
-        await interaction.response.send_message(
-            "Registered media channels:\n" + "\n".join(channel_mentions), ephemeral=True
+        await interaction.edit_original_message(
+            content="Registered media channels:\n" + "\n".join(channel_mentions),
+            ephemeral=True,
         )
 
 
