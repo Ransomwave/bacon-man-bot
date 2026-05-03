@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from typing import Literal
 
@@ -57,6 +58,11 @@ class Logger:
         self._logger = logging.getLogger(name)
         self._logger.setLevel(level)
         self._logger.addHandler(self._handler)
+        self._logger.addFilter(
+            RotatingFileHandler(
+                filename, mode=mode, maxBytes=3 * 1024 * 1024, backupCount=1
+            )
+        )
 
     def __str__(self):
         return f"Logger(name={self.name}, filename={self.filename}, level={self.level}, mode={self.mode}, format={self.format}, print_level={self.print_level}, colors={self.colors})"
