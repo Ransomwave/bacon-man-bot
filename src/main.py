@@ -18,7 +18,7 @@ def main():
 
     # Create the nextcord debug logger
     nextcord_logger = Logger(
-        "nextcord", "logs/nextcord.log", level=logging.DEBUG, print_level=100
+        "nextcord", "logs/nextcord.log", level=logging.WARNING, print_level=100
     )
 
     # Create the bot
