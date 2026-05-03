@@ -4,22 +4,20 @@ import nextcord
 from nextcord.ext.commands import Cog
 
 import bot
+import config
+from utils import db_utils
 
 
-# Initializes the starboard SQLite table (obviously)
-async def create_starboard_table():
-    async with aiosqlite.connect("bot_data.db") as db:
-        # Create the primary starboard SQL table, if it doesn't exist
-        print("Initializing starboard database")
-        await db.execute(
-            """CREATE TABLE IF NOT EXISTS starboard (
-        message_id INTEGER PRIMARY KEY,
-        starboard_message_id INTEGER)
-        """
-        )
-
-        await db.commit()
-        print("bot_data.db (starboard) initialized")
+# Initializes the starboard SQLite table
+async def setup_db_table():
+    await db_utils.create_table(
+        "starboard",
+        {
+            "message_id": "INTEGER PRIMARY KEY",
+            "starboard_message_id": "INTEGER",
+        },
+    )
+    print("Starboard table created successfully.")
 
 
 class Starboard(Cog):

@@ -5,7 +5,7 @@ import nextcord
 from nextcord.ext.commands import Cog
 
 import config
-from utils import checks
+from utils import checks, db_utils
 
 ChannelType = Union[nextcord.TextChannel, nextcord.Thread]
 DEFAULT_TITLE = "Reaction Roles"
@@ -28,81 +28,37 @@ def _build_panel_embed(title: str, description: str, rows: list[tuple[str, int]]
     return nextcord.Embed(title=title, description=body, color=0xFF4747)
 
 
-async def _table_exists(db: aiosqlite.Connection, table_name: str) -> bool:
-    cursor = await db.execute(
-        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
-        (table_name,),
-    )
-    return await cursor.fetchone() is not None
+# async def _table_exists(db: aiosqlite.Connection, table_name: str) -> bool:
+#     cursor = await db.execute(
+#         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+#         (table_name,),
+#     )
+#     return await cursor.fetchone() is not None
 
 
-async def _migrate_legacy_schema(db: aiosqlite.Connection):
-    has_old_roles = await _table_exists(db, "reaction_roles")
-    has_old_message = await _table_exists(db, "reaction_roles_message")
-    if not (has_old_roles and has_old_message):
-        return
+async def setup_db_table():
 
-    cursor = await db.execute("SELECT message_id FROM reaction_roles_message LIMIT 1")
-    legacy_message = await cursor.fetchone()
-    if legacy_message is None:
-        return
-
-    legacy_message_id = legacy_message[0]
-    await db.execute(
-        """
-        INSERT OR IGNORE INTO reaction_role_messages (message_id, channel_id, title, description)
-        VALUES (?, ?, ?, ?)
-        """,
-        (
-            legacy_message_id,
-            int(config.REACTION_ROLES_CHANNEL),
-            DEFAULT_TITLE,
-            DEFAULT_DESCRIPTION,
-        ),
+    await db_utils.create_table(
+        "reaction_role_messages",
+        {
+            "message_id": "INTEGER PRIMARY KEY",
+            "channel_id": "INTEGER NOT NULL",
+            "title": "TEXT NOT NULL",
+            "description": "TEXT NOT NULL",
+        },
     )
 
-    cursor = await db.execute("SELECT emoji, role_id FROM reaction_roles")
-    legacy_rows = await cursor.fetchall()
-    for emoji, role_id in legacy_rows:
-        await db.execute(
-            """
-            INSERT OR IGNORE INTO reaction_role_entries (message_id, emoji, role_id)
-            VALUES (?, ?, ?)
-            """,
-            (legacy_message_id, emoji, role_id),
-        )
-
-
-async def create_reaction_roles_table():
-    async with aiosqlite.connect("bot_data.db") as db:
-        print("Initializing reaction roles database")
-        await db.execute("PRAGMA foreign_keys = ON")
-        await db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS reaction_role_messages (
-                message_id INTEGER PRIMARY KEY,
-                channel_id INTEGER NOT NULL,
-                title TEXT NOT NULL,
-                description TEXT NOT NULL
-            )
-            """
-        )
-        await db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS reaction_role_entries (
-                message_id INTEGER NOT NULL,
-                emoji TEXT NOT NULL,
-                role_id INTEGER NOT NULL,
-                PRIMARY KEY (message_id, emoji),
-                FOREIGN KEY (message_id) REFERENCES reaction_role_messages (message_id)
-                    ON DELETE CASCADE
-            )
-            """
-        )
-
-        await _migrate_legacy_schema(db)
-        await db.commit()
-        print("bot_data.db (reaction roles) initialized")
+    await db_utils.create_table(
+        "reaction_role_entries",
+        {
+            "message_id": "INTEGER NOT NULL",
+            "emoji": "TEXT NOT NULL",
+            "role_id": "INTEGER NOT NULL",
+            "PRIMARY KEY (message_id, emoji)": "",
+            "FOREIGN KEY (message_id)": "REFERENCES reaction_role_messages (message_id) ON DELETE CASCADE",
+        },
+    )
+    print("bot_data.db (reaction roles) initialized")
 
 
 async def add_reactions_to_message(message: nextcord.Message, emojis: list[str]):
@@ -250,7 +206,9 @@ class ReactionRolesCommands(Cog):
             required=True,
         ),
     ):
-        if not await checks.require_permission(interaction, "administrator"):
+        if not await checks.require_permission(
+            interaction, nextcord.Permissions(administrator=True)
+        ):
             return
 
         await interaction.response.defer(ephemeral=True)
@@ -302,7 +260,9 @@ class ReactionRolesCommands(Cog):
             required=False,
         ),
     ):
-        if not await checks.require_permission(interaction, "administrator"):
+        if not await checks.require_permission(
+            interaction, nextcord.Permissions.administrator
+        ):
             return
 
         if title is None and description is None:
@@ -363,6 +323,44 @@ class ReactionRolesCommands(Cog):
         )
 
     @nextcord.slash_command(
+        name="reaction_role_message_reload",
+        description="Reloads the contents of a reaction role panel message from the database",
+    )
+    async def reaction_role_message_reload(
+        self,
+        interaction: nextcord.Interaction,
+        message_id: str = nextcord.SlashOption(
+            name="message_id",
+            description="Panel message ID (copy from Discord message)",
+            required=True,
+        ),
+    ):
+        if not await checks.require_permission(
+            interaction, nextcord.Permissions(administrator=True)
+        ):
+            return
+
+        parsed_message_id = self._parse_message_id(message_id)
+        if parsed_message_id is None:
+            await interaction.response.send_message(
+                "message_id must be a numeric Discord message ID.", ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            await self._refresh_panel_message(parsed_message_id)
+        except Exception as e:
+            self.bot.logger.error(f"Failed to refresh panel {parsed_message_id}: {e}")
+            await interaction.edit_original_message(content=f"Error: {e}")
+            return
+
+        await interaction.edit_original_message(
+            content=f"Reloaded panel {parsed_message_id} from the database."
+        )
+
+    @nextcord.slash_command(
         name="reaction_role_add", description="Add/update a reaction role in a panel"
     )
     async def reaction_role_add(
@@ -384,7 +382,9 @@ class ReactionRolesCommands(Cog):
             required=True,
         ),
     ):
-        if not await checks.require_permission(interaction, "administrator"):
+        if not await checks.require_permission(
+            interaction, nextcord.Permissions(administrator=True)
+        ):
             return
 
         parsed_message_id = self._parse_message_id(message_id)
@@ -457,7 +457,9 @@ class ReactionRolesCommands(Cog):
             required=True,
         ),
     ):
-        if not await checks.require_permission(interaction, "administrator"):
+        if not await checks.require_permission(
+            interaction, nextcord.Permissions(administrator=True)
+        ):
             return
 
         parsed_message_id = self._parse_message_id(message_id)
@@ -516,20 +518,20 @@ class ReactionRolesCommands(Cog):
             required=False,
         ),
     ):
-        if not await checks.require_permission(interaction, "administrator"):
+        if not await checks.require_permission(
+            interaction, nextcord.Permissions(administrator=True)
+        ):
             return
 
         async with aiosqlite.connect("bot_data.db") as db:
             if message_id is None:
-                cursor = await db.execute(
-                    """
+                cursor = await db.execute("""
                     SELECT m.message_id, m.title, COUNT(e.emoji)
                     FROM reaction_role_messages m
                     LEFT JOIN reaction_role_entries e ON e.message_id = m.message_id
                     GROUP BY m.message_id, m.title
                     ORDER BY m.message_id
-                    """
-                )
+                    """)
                 panels = await cursor.fetchall()
 
                 if not panels:

@@ -9,7 +9,7 @@ type PermissionType = Literal["administrator", "manage_roles", "manage_guild"]
 
 async def require_permission(
     interaction: nextcord.Interaction,
-    permission: PermissionType,
+    permission: nextcord.Permissions,
 ) -> bool:
     """Check if the user has the required permission"""
 
@@ -24,14 +24,14 @@ async def require_permission(
         return False
 
     # Use interaction-scoped permissions to avoid network calls/timeouts.
-    has_permission = bool(getattr(interaction.permissions, permission, False))
+    has_permission = interaction.user.guild_permissions.is_superset(permission)
     if not has_permission:
-        print(
-            f"User {interaction.user} does not have {permission} permission to use this command."
-        )
-        await _send_reply(
-            f"You need the `{permission}` permission to use this command."
-        )
+        # Instead of f"{permission}", find which permission bit is set
+        missing_perms = [name for name, value in permission if value]
+        perms_str = ", ".join(missing_perms).replace("_", " ").title()
+
+        await _send_reply(f"You need the `{perms_str}` permission to use this command.")
+
         return False
 
     return True
