@@ -1,17 +1,19 @@
 # Bacon Man Bot
 
-Bacon Man Bot is a Discord bot built using Nextcord (a fork of Discord.py) that provides various functionalities including game stats retrieval, starboard functionality, attachment limit enforcement, and more.
+Bacon Man is a Discord bot built using [Nextcord](https://github.com/nextcord/nextcord) that provides many nice features for managing your Discord server.
 
-This bot was built for managing my own Discord, with features being made to bring solutions to my problems that no other bot offered.
+This bot was originally built for managing my own Discord, adding features that no other bot offered or that required multiple bots.
+
+## Commands
+
+- **Game Stats Retrieval (`/stats`)**: Fetches and displays game statistics for supported games.
+- **Media-only channels (`/mediaonly_add`, `/mediaonly_remove`, `/mediaonly_list`)**: Create and manage channels that only allow media attachments.
+- **Autoreact (`/autoreact_add`, `/autoreact_remove`, `/autoreact_list`, `/autoreact_deregister`)**: Add and manage automatic reactions to messages on specific channels.
+- **Reaction roles (`/reaction_roles_add`, `/reaction_roles_remove`, `/reaction_role_list`, `/reaction_role_message_create`, `/reaction_role_message_edit`, `/reaction_role_message_delete`)**: Create and manage reaction roles for server members.
 
 ## Capabilities
 
-- **Game Stats**: Retrieve stats for Roblox games using the `/stats` command.
-- **Starboard**: Automatically post messages that receive a certain number of star reactions to a designated starboard channel.
-  - **Blacklist**: Maintain a blacklist of users whose messages will not be considered for the starboard.
-  - **Strict Mode**: Optionally require messages to have attachments to be eligible for the starboard.
-- **Attachment Limit**: Enforce a limit on the number of attachments in messages.
-  - **Configurable Limit**: Set a custom attachment limit for messages.
-  - **Attachment Deletion**: Automatically delete attachments that exceed the specified limit.
-- **Bug Report Management**: Close bug report threads with a specified reason.
-- **Customizable Settings**: Configure various settings such as starboard channels, trigger counts, and more.
+- **Bug Report Management (`/close`)**: Manages bug report threads, allowing you to close them with a specified reason.
+- **Starboard Functionality**: Allows users to star messages, which are then displayed in a dedicated starboard channel.
+- **Attachment Limit Enforcement**: Enforces limits on the number of attachments in messages to prevent spam.
+- **Customizable Settings**: Provides options for server administrators to customize the bot's behavior and responses.
